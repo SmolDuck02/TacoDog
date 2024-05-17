@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -54,7 +55,6 @@ export default function Home() {
 
   useEffect(() => {
     const lastMessage = document.getElementById((messages.length - 1).toString());
-    console.log("geniveve", lastMessage);
     lastMessage?.scrollIntoView({ behavior: "smooth" });
 
     if (inputText.startsWith("!")) {
@@ -142,33 +142,100 @@ function Account() {
 }
 
 function SignInModal() {
+  const [formData, setFormData] = useState({
+    username: "",
+    password1: "",
+    password2: "",
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/signin/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Form submission error:", errorData);
+      } else {
+        const data = await response.json();
+        console.log("Form submission success:", data);
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+    }
+  };
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="secondary">Sign In </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Sign In</DialogTitle>
-          <DialogDescription>Send some love: 091m155h3r</DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Name
-            </Label>
-            <Input id="name" defaultValue="Pedro Duarte" className="col-span-3" />
+        <form onSubmit={handleFormSubmit}>
+          <DialogHeader>
+            <DialogTitle>Sign In</DialogTitle>
+            <DialogDescription>Send some love: 091m155h3r</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Username
+              </Label>
+              <Input
+                id="username"
+                name="username"
+                placeholder="Pedro Duarte"
+                value={formData.username}
+                onChange={handleChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="username" className="text-right">
+                Password
+              </Label>
+              <Input
+                id="password1"
+                placeholder="Password"
+                name="password1"
+                type="password"
+                value={formData.password1}
+                onChange={handleChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="username" className="text-right">
+                Confirm Password
+              </Label>
+              <Input
+                id="password2"
+                name="password2"
+                placeholder="Confirm Password"
+                type="password"
+                value={formData.password2}
+                onChange={handleChange}
+                className="col-span-3"
+              />
+            </div>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="username" className="text-right">
-              Username
-            </Label>
-            <Input id="username" defaultValue="@peduarte" className="col-span-3" />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button type="submit">Save changes</Button>
-        </DialogFooter>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="submit">Sign In</Button>
+            </DialogClose>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
@@ -235,7 +302,4 @@ function ThemeModeButton() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
-function chatWithG4F(messages: string[]) {
-  throw new Error("Function not implemented.");
 }

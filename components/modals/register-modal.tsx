@@ -1,9 +1,9 @@
+import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -13,111 +13,6 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-
-export function SignupModal({
-  setUser,
-}: {
-  setUser: (newValue: { username: string; password: string }) => void;
-}) {
-  const [formData, setFormData] = useState({
-    username: "",
-    password1: "",
-    password2: "",
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    try {
-      const response = await fetch("http://127.0.0.1:8000/signin/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Signup error:", errorData);
-      } else {
-        const data = await response.json();
-        console.log("Signup success:", data);
-        setUser({ username: data.user.username, password: data.user.password });
-      }
-    } catch (error) {
-      console.error("Signup error:", error);
-    }
-  };
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="secondary">Sign Up </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <form onSubmit={handleSignup}>
-          <DialogHeader>
-            <DialogTitle>Sign In</DialogTitle>
-            <DialogDescription>Send some love: 091m155h3r</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Username
-              </Label>
-              <Input
-                id="username"
-                name="username"
-                placeholder="Pedro Duarte"
-                value={formData.username}
-                onChange={handleChange}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="username" className="text-right">
-                Password
-              </Label>
-              <Input
-                id="password1"
-                placeholder="Password"
-                name="password1"
-                type="password"
-                value={formData.password1}
-                onChange={handleChange}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="username" className="text-right">
-                Confirm Password
-              </Label>
-              <Input
-                id="password2"
-                name="password2"
-                placeholder="Confirm Password"
-                type="password"
-                value={formData.password2}
-                onChange={handleChange}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="submit">Sign Up</Button>
-            </DialogClose>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 export default function RegisterModal({
   setUser,
@@ -164,7 +59,7 @@ export default function RegisterModal({
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("username", data.user.username);
         localStorage.setItem("userId", data.user.id);
-
+        
         console.log(`${mode} success:`, data);
       }
     } catch (error) {

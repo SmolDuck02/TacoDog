@@ -25,7 +25,7 @@ interface Chat {
 export default function Home() {
   const [messages, setMessages] = useState<Chat[]>([]);
   const [inputText, setInputText] = useState("");
-  const [user, setUser] = useState({ id: 0, username: "" });
+  const [user, setUser] = useState({ id: 0, username: "Guest" });
 
   async function signinGuest() {
     try {
@@ -90,7 +90,7 @@ export default function Home() {
   useEffect(() => {
     const timer = setInterval(() => {
       getChats();
-    }, 100);
+    }, 5000);
     return () => {
       clearInterval(timer);
     };
@@ -107,7 +107,7 @@ export default function Home() {
       saveMessage();
     }
 
-    if (messages[messages.length - 1]?.username != "TacoDogss") setInputText(""); 
+    if (messages[messages.length - 1]?.username != "TacoDogss") setInputText("");
   }, [messages]);
 
   return (

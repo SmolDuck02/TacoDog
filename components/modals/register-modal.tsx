@@ -1,4 +1,3 @@
-import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
@@ -23,7 +22,7 @@ export default function RegisterModal({
 }) {
   const [isPassShown, setIsPassShown] = useState(false);
   const [open, setOpen] = useState(false);
-  const [isError, setIsError] = useState(false);
+  const [isError, setIsError] = useState({ state: false, message: "" });
   const url = mode == "Sign In" ? "signin/user/" : "signup/";
   const [formData, setFormData] = useState({
     username: "",
@@ -49,7 +48,11 @@ export default function RegisterModal({
 
       if (!response.ok) {
         const errorData = await response.json();
-        setIsError(true);
+
+        setIsError({
+          state: true,
+          message: mode == "Sign Up" ? JSON.parse(errorData.errors).password2[0].code : errorData,
+        });
 
         console.error(`${mode} error:`, errorData);
       } else {
@@ -59,16 +62,21 @@ export default function RegisterModal({
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("username", data.user.username);
         localStorage.setItem("userId", data.user.id);
-        
+
         console.log(`${mode} success:`, data);
       }
     } catch (error) {
-      setIsError(true);
-      console.error(`${mode} error:`, error);
+      if (error instanceof Error) {
+        setIsError({
+          state: true,
+          message: error.message,
+        });
+        console.error(`${mode} catch error:`, error.message);
+      }
     }
   };
 
-  useEffect(() => setIsError(false), [formData]);
+  useEffect(() => setIsError((prevError) => ({ ...prevError, state: false })), [formData]);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -131,7 +139,7 @@ export default function RegisterModal({
                 />
               </div>
             )}
-            {isError && (
+            {isError.state && (
               <span className="text-sm text-red-500 text-end">
                 {(() => {
                   if (mode == "Sign In") {
@@ -143,7 +151,8 @@ export default function RegisterModal({
                         return "*Passwords do not match!";
                       }
                       if (formData.password1 == formData.password2) {
-                        return "*VV Weak Password!";
+                        return `*${isError.message}`;
+                        return "*VV Weak Password";
                       }
                     }
                   }

@@ -26,7 +26,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Chat[]>([]);
   const [inputText, setInputText] = useState("");
   const [user, setUser] = useState({ id: 0, username: "Guest" });
-
+  const [isSaveMessage, setIsSaveMessage] = useState(false);
   async function signinGuest() {
     try {
       const response = await axios.get("http://127.0.0.1:8000/signin/guest/");
@@ -59,13 +59,14 @@ export default function Home() {
       throw new Error("Failed to fetch data");
     }
     setMessages([...messages, { chat: response.data.response, username: "TacoDogss" }]);
+    setIsSaveMessage(true);
     console.log(response.data);
   }
 
   async function saveMessage() {
     const response = await axios.post("http://127.0.0.1:8000/addChat/", {
-      chat: inputText,
-      userId: user.id,
+      chat: messages[messages.length - 1]?.chat,
+      userId: messages[messages.length - 1]?.username == "TacoDogss" ? 16 : user.id,
     });
     if (response.data.error) {
       console.log("Failed to save message: ", response.data.error);
@@ -73,10 +74,6 @@ export default function Home() {
       console.log("Save message success");
     }
   }
-
-  const onSendMessage = () => {
-    setMessages([...messages, { chat: inputText, username: user.username }]);
-  };
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
@@ -96,18 +93,28 @@ export default function Home() {
     };
   });
 
-  useEffect(() => {
-    const lastMessage = document.getElementById((messages.length - 1).toString());
-    lastMessage?.scrollIntoView({ behavior: "smooth" });
-    console.log("messages", messages);
+  const onSendMessage = () => {
+    setIsSaveMessage(true);
+    setMessages([...messages, { chat: inputText, username: user.username }]);
+  };
 
-    if (inputText.startsWith("!")) {
-      askAI();
-    } else if (inputText) {
+  useEffect(() => {
+    if (inputText.startsWith("!")) askAI();
+    // save all messages
+    if (isSaveMessage) {
       saveMessage();
+      setIsSaveMessage(false);
     }
 
     if (messages[messages.length - 1]?.username != "TacoDogss") setInputText("");
+  }, [isSaveMessage]);
+
+  useEffect(() => {
+    if (messages) {
+      const lastMessage = document.getElementById((messages.length - 1).toString());
+      lastMessage?.scrollIntoView({ behavior: "smooth" });
+      console.log("messages", messages);
+    }
   }, [messages]);
 
   return (

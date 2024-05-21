@@ -4,7 +4,7 @@ type ResponseObject = {
 
 export default async function askMe(userMessage: string): Promise<ResponseObject> {
   console.log(userMessage);
-  const response = await fetch("http://127.0.0.1:8000/ask/", {
+  const response = await fetch("http://web-production-019a.up.railway.app/ask/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

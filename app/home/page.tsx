@@ -29,7 +29,7 @@ export default function Home() {
   const [isSaveMessage, setIsSaveMessage] = useState(false);
   async function signinGuest() {
     try {
-      const response = await axios.get("http://127.0.0.1:8000/signin/guest/");
+      const response = await axios.get("http://web-production-019a.up.railway.app/signin/guest/");
       setUser({ id: response.data.user.id, username: response.data.user.username });
     } catch (error) {
       console.error("Error signing in as guest:", error);
@@ -38,7 +38,7 @@ export default function Home() {
 
   async function getChats() {
     try {
-      const response = await axios.get("http://127.0.0.1:8000/getChats/");
+      const response = await axios.get("http://web-production-019a.up.railway.app/getChats/");
       const chatHistory = response.data.userChats;
       if (messages.length != chatHistory.length) {
         console.log("geneviewve", response.data.userChats);
@@ -51,7 +51,7 @@ export default function Home() {
   }
 
   async function askAI() {
-    const response = await axios.post("http://127.0.0.1:8000/ask/", {
+    const response = await axios.post("http://web-production-019a.up.railway.app/ask/", {
       inputText: inputText.slice(1),
     });
 
@@ -64,7 +64,7 @@ export default function Home() {
   }
 
   async function saveMessage() {
-    const response = await axios.post("http://127.0.0.1:8000/addChat/", {
+    const response = await axios.post("http://web-production-019a.up.railway.app/addChat/", {
       chat: messages[messages.length - 1]?.chat,
       userId: messages[messages.length - 1]?.username == "TacoDogss" ? 16 : user.id,
     });

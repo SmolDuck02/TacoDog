@@ -13,7 +13,7 @@ export default function Account({
 }) {
   async function handleLogout() {
     try {
-      const response = await axios.get("http://127.0.0.1:8000/signin/guest/");
+      const response = await axios.get("http://web-production-019a.up.railway.app/signin/guest/");
       setUser({ id: response.data.user.id, username: response.data.user.username });
       clearLocalStorage();
       console.log("Logout sucess");

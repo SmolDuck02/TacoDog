@@ -29,7 +29,7 @@ export default function Home() {
   const [isSaveMessage, setIsSaveMessage] = useState(false);
   async function signinGuest() {
     try {
-      const response = await axios.get("http://web-production-019a.up.railway.app/signin/guest/");
+      const response = await axios.get("https://web-production-019a.up.railway.app/signin/guest/");
       setUser({ id: response.data.user.id, username: response.data.user.username });
     } catch (error) {
       console.error("Error signing in as guest:", error);
@@ -38,7 +38,7 @@ export default function Home() {
 
   async function getChats() {
     try {
-      const response = await axios.get("http://web-production-019a.up.railway.app/getChats/");
+      const response = await axios.get("https://web-production-019a.up.railway.app/getChats/");
       const chatHistory = response.data.userChats;
       if (messages.length != chatHistory.length) {
         console.log("geneviewve", response.data.userChats);
@@ -51,22 +51,22 @@ export default function Home() {
   }
 
   async function askAI() {
-    const response = await axios.post("http://web-production-019a.up.railway.app/ask/", {
+    const response = await axios.post("https://web-production-019a.up.railway.app/ask/", {
       inputText: inputText.slice(1),
     });
 
     if (!response) {
       throw new Error("Failed to fetch data");
     }
-    setMessages([...messages, { chat: response.data.response, username: "TacoDogss" }]);
+    setMessages([...messages, { chat: response.data.response, username: "TacoDog" }]);
     setIsSaveMessage(true);
     console.log(response.data);
   }
 
   async function saveMessage() {
-    const response = await axios.post("http://web-production-019a.up.railway.app/addChat/", {
+    const response = await axios.post("https://web-production-019a.up.railway.app/addChat/", {
       chat: messages[messages.length - 1]?.chat,
-      userId: messages[messages.length - 1]?.username == "TacoDogss" ? 16 : user.id,
+      userId: messages[messages.length - 1]?.username == "TacoDog" ? 7 : user.id,
     });
     if (response.data.error) {
       console.log("Failed to save message: ", response.data.error);
@@ -106,7 +106,7 @@ export default function Home() {
       setIsSaveMessage(false);
     }
 
-    if (messages[messages.length - 1]?.username != "TacoDogss") setInputText("");
+    if (messages[messages.length - 1]?.username != "TacoDog") setInputText("");
   }, [isSaveMessage]);
 
   useEffect(() => {
@@ -126,6 +126,7 @@ export default function Home() {
               <CardTitle>TacoDogoo</CardTitle>
               <CardDescription className="p-1 text-xs">
                 AI Chat Assistant - CSIT349 Final Project
+                <div>(Ask me anything with a "!" prefix)</div>
               </CardDescription>
             </div>
             <div className="flex gap-4 items-center">

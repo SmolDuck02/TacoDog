@@ -41,14 +41,13 @@ export default function Home() {
       const response = await axios.get("https://web-production-019a.up.railway.app/getChats/");
       const chatHistory: Chat[] = response.data.userChats;
       if (messages.length != chatHistory.length) {
-        
-        chatHistory.sort((a, b) => { 
+        chatHistory.sort((a, b) => {
           if (a.time && b.time) {
             return new Date(a.time).getTime() - new Date(b.time).getTime();
           } else {
             return 0;
           }
-        }); 
+        });
 
         setMessages([...chatHistory.flat()]);
         console.log("chatHistory:", chatHistory);
@@ -125,10 +124,8 @@ export default function Home() {
             <div>
               <CardTitle>TacoDogoo</CardTitle>
               <CardDescription className="p-1 text-xs">
-                AI Chat Assistant - CSIT349 Final Project
-                <div>
-                  (Ask me anything with a <q>!</q> prefix)
-                </div>
+                AI Chat Assistant - CSIT349 Final Project <br /> (Ask me anything with a <q>!</q>{" "}
+                prefix)
               </CardDescription>
             </div>
             <div className="flex gap-4 items-center">

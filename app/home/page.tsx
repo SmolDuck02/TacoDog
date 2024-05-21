@@ -126,7 +126,9 @@ export default function Home() {
               <CardTitle>TacoDogoo</CardTitle>
               <CardDescription className="p-1 text-xs">
                 AI Chat Assistant - CSIT349 Final Project
-                <div>(Ask me anything with a "!" prefix)</div>
+                <div>
+                  (Ask me anything with a <q>!</q> prefix)
+                </div>
               </CardDescription>
             </div>
             <div className="flex gap-4 items-center">

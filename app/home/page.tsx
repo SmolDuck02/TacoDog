@@ -44,7 +44,7 @@ export default function Home() {
         
         chatHistory.sort((a, b) => { 
           if (a.time && b.time) {
-            return new Date(b.time).getTime() - new Date(a.time).getTime();
+            return new Date(a.time).getTime() - new Date(b.time).getTime();
           } else {
             return 0;
           }

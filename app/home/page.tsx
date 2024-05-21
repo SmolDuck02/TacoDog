@@ -20,7 +20,7 @@ import { useEffect, useState } from "react";
 interface Chat {
   chat: string;
   username: string;
-  created_at?: string;
+  time?: string;
 }
 export default function Home() {
   const [messages, setMessages] = useState<Chat[]>([]);
@@ -39,11 +39,19 @@ export default function Home() {
   async function getChats() {
     try {
       const response = await axios.get("https://web-production-019a.up.railway.app/getChats/");
-      const chatHistory = response.data.userChats;
+      const chatHistory: Chat[] = response.data.userChats;
       if (messages.length != chatHistory.length) {
-        console.log("geneviewve", response.data.userChats);
-        console.log("chatHistory:", chatHistory);
+        
+        chatHistory.sort((a, b) => { 
+          if (a.time && b.time) {
+            return new Date(b.time).getTime() - new Date(a.time).getTime();
+          } else {
+            return 0;
+          }
+        }); 
+
         setMessages([...chatHistory.flat()]);
+        console.log("chatHistory:", chatHistory);
       }
     } catch (error) {
       console.error("Error signing in as guest:", error);
@@ -108,14 +116,6 @@ export default function Home() {
 
     if (messages[messages.length - 1]?.username != "TacoDog") setInputText("");
   }, [isSaveMessage]);
-
-  useEffect(() => {
-    if (messages) {
-      const lastMessage = document.getElementById((messages.length - 1).toString());
-      lastMessage?.scrollIntoView({ behavior: "smooth" });
-      console.log("messages", messages);
-    }
-  }, [messages]);
 
   return (
     <div className="h-screen w-screen flex justify-center items-center">

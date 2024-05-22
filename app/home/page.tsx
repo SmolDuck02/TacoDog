@@ -82,6 +82,23 @@ export default function Home() {
     }
   }
 
+  const onSendMessage = () => {
+    setIsSaveMessage(true);
+    setMessages([...messages, { chat: inputText, username: user.username }]);
+  };
+
+  useEffect(() => {
+    if (inputText.startsWith("!")) askAI();
+    // save all messages
+    if (isSaveMessage) {
+      saveMessage();
+      setIsSaveMessage(false);
+    }
+
+    if (messages[messages.length - 1]?.username != "TacoDog") setInputText("");
+  }, [isSaveMessage]);
+  
+
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     if (isLoggedIn) {
@@ -99,23 +116,6 @@ export default function Home() {
       clearInterval(timer);
     };
   });
-
-  const onSendMessage = () => {
-    setIsSaveMessage(true);
-    setMessages([...messages, { chat: inputText, username: user.username }]);
-  };
-
-  useEffect(() => {
-    if (inputText.startsWith("!")) askAI();
-    // save all messages
-    if (isSaveMessage) {
-      saveMessage();
-      setIsSaveMessage(false);
-    }
-
-    if (messages[messages.length - 1]?.username != "TacoDog") setInputText("");
-  }, [isSaveMessage]);
-
   return (
     <div className="h-screen w-screen flex justify-center items-center">
       <Card className="w-1/2  mx-auto">

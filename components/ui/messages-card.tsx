@@ -1,34 +1,29 @@
-import { useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
-import { Card, CardContent } from "./card";
+import { CardContent, CardDescription } from "./card";
 import { Label } from "./label";
 
+interface User {
+  id: number;
+  username: string;
+}
 export default function MessagesCard({
   messages,
   currentUsername,
 }: {
-  messages: { chat: string; username: string }[];
+  messages: { chat: string; user: User }[];
   currentUsername: string;
 }) {
-  useEffect(() => {
-    // Scroll to the bottom of the messages container when messages change
-    const messagesContainer = document.getElementById("messages-container");
-    messagesContainer?.scrollTo({
-      top: messagesContainer.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [messages]);
-
   return (
-    <Card>
-      <CardContent
-        id="messages-container"
-        className="overflow-auto h-[40vh] scroll-smooth scrollbar p-5 flex flex-col gap-4"
-      >
-        {messages[0] ? (
-          messages.map((message, index) => {
+    <CardContent
+      id="messages-container"
+      className="scroll-smooth scrollbar h-full p-5 flex flex-col gap-4"
+    >
+      {messages[0] ? (
+        <CardDescription className=" w-full   gap-4  text-center flex flex-col ">
+          {messages.map((message, index) => {
             const isAuthor =
-              currentUsername === message.username && message.username.toLowerCase() !== "guest";
+              currentUsername == message.user.username &&
+              message.user.username.toLowerCase() !== "guest";
             return (
               <div
                 id={index.toString()}
@@ -39,7 +34,7 @@ export default function MessagesCard({
                   <Avatar className="mb-1">
                     <AvatarImage
                       src={
-                        message.username.toLowerCase() === "tacodog"
+                        message.user.username.toLowerCase() === "tacodog"
                           ? "/avatars/tacodog.png"
                           : "https://github.com/shadcn.png"
                       }
@@ -48,26 +43,36 @@ export default function MessagesCard({
                   </Avatar>
                 )}
                 <div>
-                  <Label htmlFor={index.toString()} className="pl-2 text-xs text-slate-500">
-                    {message.username}
+                  <Label
+                    htmlFor={index.toString()}
+                    className="pl-2 flex justify-start text-xs text-slate-500"
+                  >
+                    {message.user.username}
                   </Label>
                   <CardContent
                     id={index.toString()}
                     key={index}
-                    className="border p-3 w-auto rounded-lg"
+                    className="border p-3 flex items-start  text-left w-auto rounded-lg"
                   >
                     {message.chat}
                   </CardContent>
                 </div>
               </div>
             );
-          })
-        ) : (
-          <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-slate-500">
-            No Chat History
+          })}
+        </CardDescription>
+      ) : (
+        <CardDescription className="h-full w-full text-center flex text-lg flex-col justify-center items-center">
+          Chat with someone <br /> <span className="text-sm text-[#2e3e5a]">or</span> Chat with
+          TacoDog by <br />
+          <span className="text-sm text-[#2e3e5a]  mt-5">
+            &quot;!&quot; prefix for text-based results! <br />
+            &quot;/&quot; prefix for image-based results!
+            <br />
+            Warf!
           </span>
-        )}
-      </CardContent>
-    </Card>
+        </CardDescription>
+      )}
+    </CardContent>
   );
 }

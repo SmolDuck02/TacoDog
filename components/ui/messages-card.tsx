@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
 import { CardContent, CardDescription } from "./card";
 import { Label } from "./label";
@@ -6,11 +7,18 @@ interface User {
   id: number;
   username: string;
 }
+
+interface Chat {
+  chat: string;
+  user: User;
+  time?: string;
+}
+
 export default function MessagesCard({
   messages,
   currentUsername,
 }: {
-  messages: { chat: string; user: User }[];
+  messages: Chat[];
   currentUsername: string;
 }) {
   return (
@@ -50,7 +58,7 @@ export default function MessagesCard({
                     {message.user.username}
                   </Label>
                   {message && message.chat.toLowerCase().startsWith("https") ? (
-                    <img
+                    <Image
                       src={message.chat}
                       alt="image generated response"
                       className="h-64 w-64 rounded"

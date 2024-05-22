@@ -172,11 +172,7 @@ export default function Home() {
   }
 
   useEffect(() => {
-    const cookies = document.cookie.split("; ");
-    console.log("co", cookies);
-
-    const cooki = {};
-
+  
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     if (isLoggedIn) {
       const username = localStorage.getItem("username") || "";

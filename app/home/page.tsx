@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/card";
 
 import Account from "@/components/ui/account";
-import MessagesCard from "@/components/ui/messages-card";
 import { Textarea } from "@/components/ui/textarea";
 import ThemeModeButton from "@/components/ui/theme-mode-button";
 import axios from "axios";
@@ -97,7 +96,6 @@ export default function Home() {
 
     if (messages[messages.length - 1]?.username != "TacoDog") setInputText("");
   }, [isSaveMessage]);
-  
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
@@ -135,7 +133,7 @@ export default function Home() {
           </div>
         </CardHeader>
         <CardContent>
-          <MessagesCard messages={messages} currentUsername={user.username} />
+          {/* <MessagesCard messages={messages} currentUsername={user.username} /> */}
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Textarea

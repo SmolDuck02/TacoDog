@@ -23,23 +23,9 @@ import axios from "axios";
 import { Send, SquarePen, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Chat, User } from "@/lib/types";
 
-interface User {
-  id: number;
-  username: string;
-}
 
-interface Chat {
-  chat: string;
-  user: User;
-  time?: string;
-}
-
-interface NewChat {
-  user1: User;
-  user2: User;
-  messages: string[];
-}
 
 function clearLocalStorage() {
   localStorage.removeItem("isLoggedIn");

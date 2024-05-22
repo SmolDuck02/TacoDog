@@ -1,24 +1,14 @@
+import { Chat } from "@/lib/types";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
 import { CardContent, CardDescription } from "./card";
 import { Label } from "./label";
 
-interface User {
-  id: number;
-  username: string;
-}
-
-interface Chat {
-  chat: string;
-  user: User;
-  time?: string;
-}
-
 export default function MessagesCard({
   messages,
   currentUsername,
 }: {
-  messages: { chat: string; user: { id: number; username: string }; time?: string }[] | undefined;
+  messages: Chat[] | undefined;
   currentUsername: string;
 }) {
   return (

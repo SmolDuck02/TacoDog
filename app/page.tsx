@@ -203,7 +203,7 @@ export default function Home() {
     return () => {
       clearInterval(timer);
     };
-  });
+  }, [privateChats]);
 
   useEffect(() => {
     // Scroll to the bottom of the messages container when messages change

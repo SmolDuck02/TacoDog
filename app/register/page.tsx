@@ -156,7 +156,9 @@ export default function Home() {
                             return "*Passwords do not match!";
                           }
                           if (formData.password1 == formData.password2) {
-                            return `*${isError.message}`;
+                            return `*${isError.message} ${
+                              isError.message.endsWith("similar") && "_with_username"
+                            }`;
                             return "*VV Weak Password";
                           }
                         }

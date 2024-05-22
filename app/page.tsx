@@ -172,6 +172,7 @@ export default function Home() {
         `https://web-production-019a.up.railway.app/getPrivateChats/${userId}/`
       );
       const data: PrivateChat[] = response.data.private_chats.flat();
+
       setPrivateChats(data);
 
       console.log("data", data);
@@ -193,6 +194,14 @@ export default function Home() {
         (chat.user2.id == activeChat.user1.id && chat.user1.id == activeChat.user2.id)
     )[0];
     if (chatso) {
+      chatso.chats.sort((a, b) => {
+        if (a.time && b.time) {
+          return new Date(a.time).getTime() - new Date(b.time).getTime();
+        } else {
+          return 0;
+        }
+      });
+      console.log("sorted?", chatso.chats);
       setActiveChat({ user1: activeChat.user1, user2: activeChat.user2, chats: chatso.chats });
       setMessages(activeChat.chats);
     }
@@ -204,7 +213,7 @@ export default function Home() {
   useEffect(() => {
     const timer = setInterval(() => {
       getPrivateChats(currentUser.id);
-    }, 1000);
+    }, 3000);
     return () => {
       clearInterval(timer);
     };

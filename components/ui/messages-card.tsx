@@ -18,7 +18,7 @@ export default function MessagesCard({
   messages,
   currentUsername,
 }: {
-  messages: { chat: string; user: User; time?: string }[] | undefined;
+  messages: { chat: string; user: { id: number; username: string }; time?: string }[] | undefined;
   currentUsername: string;
 }) {
   return (

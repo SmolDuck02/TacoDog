@@ -49,13 +49,21 @@ export default function MessagesCard({
                   >
                     {message.user.username}
                   </Label>
-                  <CardContent
-                    id={index.toString()}
-                    key={index}
-                    className="border p-3 flex items-start  text-left w-auto rounded-lg"
-                  >
-                    {message.chat}
-                  </CardContent>
+                  {message && message.chat.toLowerCase().startsWith("https") ? (
+                    <img
+                      src={message.chat}
+                      alt="image generated response"
+                      className="h-64 w-64 rounded"
+                    />
+                  ) : (
+                    <CardContent
+                      id={index.toString()}
+                      key={index}
+                      className="border p-3 flex items-start  text-left w-auto rounded-lg"
+                    >
+                      {message.chat}
+                    </CardContent>
+                  )}
                 </div>
               </div>
             );

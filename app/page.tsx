@@ -67,10 +67,13 @@ export default function Home() {
   const [isSaveMessage, setIsSaveMessage] = useState(false);
 
   async function addPrivateChat(chatId: number) {
-    const response = await axios.post("http://127.0.0.1:8000/addPrivateChat/", {
-      userIds: [currentUser.id, activeChat.user2.id],
-      chatIds: [chatId],
-    });
+    const response = await axios.post(
+      "https://web-production-019a.up.railway.app/addPrivateChat/",
+      {
+        userIds: [currentUser.id, activeChat.user2.id],
+        chatIds: [chatId],
+      }
+    );
     if (response.data.error) {
       console.log("Failed to save private chat: ", response.data.error);
     } else {
@@ -79,7 +82,7 @@ export default function Home() {
   }
 
   async function saveMessage() {
-    const response = await axios.post("http://127.0.0.1:8000/addChat/", {
+    const response = await axios.post("https://web-production-019a.up.railway.app/addChat/", {
       chat: messages[messages.length - 1]?.chat,
       userId: messages[messages.length - 1]?.user.id,
     });
@@ -101,8 +104,9 @@ export default function Home() {
 
   useEffect(() => {
     if (inputText.startsWith("!")) askAI();
-    // save all messages
+    else if (inputText.startsWith("/")) askImage();
     if (isSaveMessage) {
+      // save all messages
       saveMessage();
       setIsSaveMessage(false);
     }
@@ -123,9 +127,23 @@ export default function Home() {
     console.log("ask ai", response.data);
   }
 
+  async function askImage() {
+    const response = await axios.post("https://web-production-019a.up.railway.app/askImage/", {
+      imagePrompt: inputText.slice(1),
+    });
+
+    if (!response) {
+      throw new Error("Failed to fetch data");
+    }
+
+    setMessages([...messages, { chat: response.data.imageResponse, user: tacodog }]);
+    setIsSaveMessage(true);
+    console.log("ask image", response.data);
+  }
+
   async function handleLogout() {
     try {
-      // const response = await axios.get("http://web-production-019a.up.railway.app/signin/guest/");
+      // const response = await axios.get("https://web-production-019a.up.railway.app/signin/guest/");
       // setUser({ id: response.data.user.id, username: response.data.user.username });
       clearLocalStorage();
       router.push("/register");
@@ -137,7 +155,7 @@ export default function Home() {
 
   async function getUsers() {
     try {
-      const response = await axios.get("http://127.0.0.1:8000/getAllUsers/");
+      const response = await axios.get("https://web-production-019a.up.railway.app/getAllUsers/");
       console.log("Users", response);
 
       const data: User[] = response.data.users.flat();
@@ -157,9 +175,7 @@ export default function Home() {
     const cookies = document.cookie.split("; ");
     console.log("co", cookies);
 
-    const cooki = {
-       
-    };
+    const cooki = {};
 
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     if (isLoggedIn) {
@@ -173,7 +189,9 @@ export default function Home() {
 
   async function getPrivateChats(userId: number) {
     try {
-      const response = await axios.get(`http://127.0.0.1:8000/getPrivateChats/${userId}/`);
+      const response = await axios.get(
+        `https://web-production-019a.up.railway.app/getPrivateChats/${userId}/`
+      );
       const data: PrivateChat[] = response.data.private_chats.flat();
       setPrivateChats(data);
 
@@ -292,7 +310,7 @@ export default function Home() {
               {inputText && (
                 <X size={20} onClick={() => setInputText("")} className="cursor-pointer" />
               )}
-              <Send size={20} onClick={onSendMessage} className="cursor-pointer" />
+              <Send size={20} onClick={onSendMessage} className="cursor-pointer" type="submit" />
             </div>
           </CardFooter>
         </div>
@@ -341,7 +359,9 @@ function Chats(props: ChatsProps) {
         No Chats
       </span> */}
       {users.map((user, index) => {
-        const privateChat = privateChats.find((chat) => chat.user2.username === user.username);
+        const privateChat = privateChats.find(
+          (chat) => chat.user2.username === user.username || chat.user1.username === user.username
+        );
         return (
           <Button
             key={index}
@@ -350,8 +370,8 @@ function Chats(props: ChatsProps) {
             onClick={() => {
               if (privateChat) {
                 setActiveChat({
-                  user1: privateChat.user1,
-                  user2: privateChat.user2,
+                  user1: privateChat.user2 == user ? privateChat.user1 : privateChat.user2,
+                  user2: user,
                   chats: privateChat.chats,
                 });
               } else {

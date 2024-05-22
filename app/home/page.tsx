@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/card";
 
 import Account from "@/components/ui/account";
-import MessagesCard from "@/components/ui/messages-card";
 import { Textarea } from "@/components/ui/textarea";
 import ThemeModeButton from "@/components/ui/theme-mode-button";
 import axios from "axios";
@@ -82,6 +81,22 @@ export default function Home() {
     }
   }
 
+  const onSendMessage = () => {
+    setIsSaveMessage(true);
+    setMessages([...messages, { chat: inputText, username: user.username }]);
+  };
+
+  useEffect(() => {
+    if (inputText.startsWith("!")) askAI();
+    // save all messages
+    if (isSaveMessage) {
+      saveMessage();
+      setIsSaveMessage(false);
+    }
+
+    if (messages[messages.length - 1]?.username != "TacoDog") setInputText("");
+  }, [isSaveMessage]);
+
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     if (isLoggedIn) {
@@ -99,23 +114,6 @@ export default function Home() {
       clearInterval(timer);
     };
   });
-
-  const onSendMessage = () => {
-    setIsSaveMessage(true);
-    setMessages([...messages, { chat: inputText, username: user.username }]);
-  };
-
-  useEffect(() => {
-    if (inputText.startsWith("!")) askAI();
-    // save all messages
-    if (isSaveMessage) {
-      saveMessage();
-      setIsSaveMessage(false);
-    }
-
-    if (messages[messages.length - 1]?.username != "TacoDog") setInputText("");
-  }, [isSaveMessage]);
-
   return (
     <div className="h-screen w-screen flex justify-center items-center">
       <Card className="w-1/2  mx-auto">
@@ -135,7 +133,7 @@ export default function Home() {
           </div>
         </CardHeader>
         <CardContent>
-          <MessagesCard messages={messages} currentUsername={user.username} />
+          {/* <MessagesCard messages={messages} currentUsername={user.username} /> */}
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Textarea

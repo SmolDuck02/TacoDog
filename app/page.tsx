@@ -19,13 +19,11 @@ import {
 import MessagesCard from "@/components/ui/messages-card";
 import { Textarea } from "@/components/ui/textarea";
 import ThemeModeButton from "@/components/ui/theme-mode-button";
+import { Chat, User } from "@/lib/types";
 import axios from "axios";
 import { Send, SquarePen, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Chat, User } from "@/lib/types";
-
-
 
 function clearLocalStorage() {
   localStorage.removeItem("isLoggedIn");
@@ -158,7 +156,6 @@ export default function Home() {
   }
 
   useEffect(() => {
-  
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     if (isLoggedIn) {
       const username = localStorage.getItem("username") || "";
@@ -199,14 +196,14 @@ export default function Home() {
 
   useEffect(() => setMessages(activeChat.chats), [activeChat]);
 
-  // useEffect(() => {
-  //   const timer = setInterval(() => {
-  //     getPrivateChats();
-  //   }, 5000);
-  //   return () => {
-  //     clearInterval(timer);
-  //   };
-  // });
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (currentUser.id) getPrivateChats(currentUser.id);
+    }, 5000);
+    return () => {
+      clearInterval(timer);
+    };
+  }, privateChats);
   useEffect(() => {
     // Scroll to the bottom of the messages container when messages change
     const messagesContainer = document.getElementById("messages-container");

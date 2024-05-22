@@ -38,13 +38,13 @@ export default function Home() {
       });
 
       const data = await response.json();
-      if (data.errors) {
+      if (data.error || data.errors) {
         setIsError({
           state: true,
-          message: mode == "Sign Up" ? JSON.parse(data.errors).password2[0].code : data,
+          message: mode == "Sign Up" ? JSON.parse(data.errors).password2[0].code : data.error,
         });
 
-        console.error(`${mode} error:`, data);
+        console.error(`${mode} error:`, data.error);
       } else {
         // setUser({ id: data.user.id, username: data.user.username });
 
@@ -149,8 +149,7 @@ export default function Home() {
                   <span className="text-sm text-red-500 text-end">
                     {(() => {
                       if (mode == "Sign In") {
-                        if (formData.password1 && formData.username)
-                          return "*Incorrect username or password!";
+                        if (formData.password1 && formData.username) return `*${isError.message}`;
                       } else {
                         if (formData.password1 && formData.password2 && formData.username) {
                           if (formData.password1 != formData.password2) {

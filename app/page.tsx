@@ -175,14 +175,6 @@ export default function Home() {
       setPrivateChats(data);
 
       console.log("data", data);
-      // defaults to tacodog
-      const defaultChat = data.find((chat) => chat.user2.username.toLowerCase() == "tacodog");
-      console.log("default chat", defaultChat);
-      if (defaultChat) {
-        setActiveChat(defaultChat);
-
-        console.log("def", defaultChat, defaultChat.chats);
-      }
 
       // const privateChatsOnly = privateChats.map((chat) => chat.chats);
       // console.log("Only", privateChatsOnly);
@@ -194,16 +186,29 @@ export default function Home() {
     }
   }
 
+  useEffect(() => {
+    const chatso = privateChats.filter(
+      (chat) =>
+        (chat.user1.id == activeChat.user1.id && chat.user2.id == activeChat.user2.id) ||
+        (chat.user2.id == activeChat.user1.id && chat.user1.id == activeChat.user2.id)
+    )[0];
+    if (chatso) {
+      setActiveChat({ user1: activeChat.user1, user2: activeChat.user2, chats: chatso.chats });
+      setMessages(activeChat.chats);
+    }
+    console.log("ora", chatso, activeChat, currentUser);
+  }, [privateChats]);
+
   useEffect(() => setMessages(activeChat.chats), [activeChat]);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      if (currentUser.id) getPrivateChats(currentUser.id);
-    }, 5000);
+      getPrivateChats(currentUser.id);
+    }, 1000);
     return () => {
       clearInterval(timer);
     };
-  });
+  }, [currentUser]);
 
   useEffect(() => {
     // Scroll to the bottom of the messages container when messages change
@@ -250,7 +255,12 @@ export default function Home() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Chats setActiveChat={setActiveChat} users={users} privateChats={privateChats} />
+          <Chats
+            setActiveChat={setActiveChat}
+            users={users}
+            currentUser={currentUser}
+            privateChats={privateChats}
+          />
         </div>
       </div>
       <div className="min-h-screen flex-1 flex flex-col border-x pb-10 ">
@@ -328,20 +338,33 @@ interface PrivateChat {
 interface ChatsProps {
   setActiveChat: (newActiveChat: PrivateChat) => void;
   users: User[];
+  currentUser: User;
   privateChats: PrivateChat[];
 }
 function Chats(props: ChatsProps) {
-  const { setActiveChat, users, privateChats } = props;
+  const { setActiveChat, users, currentUser, privateChats } = props;
+
+  const privateChat = privateChats.filter(
+    (chat) => chat.user1.id == currentUser.id || chat.user2.id == currentUser.id
+  );
+
+  // console.log("amb", privateChat, currentUser);
 
   return (
     <div className="flex mt-2 flex-col scrollbar pt-2 h-4/5 overflow-auto w-full gap-4">
       {/* <span className="flex h-full justify-center items-center text-sm text-muted-foreground">
         No Chats
       </span> */}
+
       {users.map((user, index) => {
-        const privateChat = privateChats.find(
-          (chat) => chat.user2.username === user.username || chat.user1.username === user.username
-        );
+        const privateChat = privateChats.filter(
+          (chat) =>
+            (chat.user1.id == user.id && chat.user2.id == currentUser.id) ||
+            (chat.user2.id == user.id && chat.user1.id == currentUser.id)
+        )[0];
+
+        // console.log("ded", privateChat);
+
         return (
           <Button
             key={index}
@@ -350,13 +373,13 @@ function Chats(props: ChatsProps) {
             onClick={() => {
               if (privateChat) {
                 setActiveChat({
-                  user1: privateChat.user2 == user ? privateChat.user1 : privateChat.user2,
+                  user1: currentUser,
                   user2: user,
                   chats: privateChat.chats,
                 });
               } else {
                 setActiveChat({
-                  user1: { id: 0, username: "" }, // Set proper default values
+                  user1: currentUser, // Set proper default values
                   user2: user,
                   chats: [],
                 });

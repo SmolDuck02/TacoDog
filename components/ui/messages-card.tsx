@@ -51,7 +51,9 @@ export default function MessagesCard({
                     <Image
                       src={message.chat}
                       alt="image generated response"
-                      className="h-64 w-64 rounded"
+                      className="rounded"
+                      width={200}
+                      height={200}
                     />
                   ) : (
                     <CardContent

@@ -38,7 +38,7 @@ export default function Home() {
       });
 
       const data = await response.json();
-      if (data.error) {
+      if (data.errors) {
         setIsError({
           state: true,
           message: mode == "Sign Up" ? JSON.parse(data.errors).password2[0].code : data,

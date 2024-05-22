@@ -34,10 +34,10 @@ export default function MessagesCard({
                       src={
                         message.user.username.toLowerCase() === "tacodog"
                           ? "/avatars/tacodog.png"
-                          : "https://github.com/shadcn.png"
+                          : ""
                       }
                     />
-                    <AvatarFallback>U</AvatarFallback>
+                    <AvatarFallback>{message.user.username[0]}</AvatarFallback>
                   </Avatar>
                 )}
                 <div>

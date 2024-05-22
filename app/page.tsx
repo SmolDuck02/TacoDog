@@ -273,8 +273,12 @@ export default function Home() {
             <div className="flex justify-between items-center">
               <div className="flex gap-5 items-center">
                 <Avatar className="h-9 w-9 cursor-pointer">
-                  <AvatarImage src="/avatars/tacodog.png" />
-                  <AvatarFallback>U</AvatarFallback>
+                  {activeChat.user2.username.toLowerCase() == "tacodog" ? (
+                    <AvatarImage src="/avatars/tacodog.png" />
+                  ) : (
+                    <AvatarImage src="" />
+                  )}
+                  <AvatarFallback>{activeChat.user2.username[0]}</AvatarFallback>
                 </Avatar>
                 <CardTitle>{activeChat.user2.username}</CardTitle>
               </div>
@@ -387,8 +391,8 @@ function Chats(props: ChatsProps) {
             }}
           >
             <Avatar className="h-9 w-9 cursor-pointer">
-              <AvatarImage src="https://github.com/shadcn.png" />
-              <AvatarFallback>U</AvatarFallback>
+              {/* <AvatarImage src="https://github.com/shadcn.png" /> */}
+              <AvatarFallback>{user.username[0]}</AvatarFallback>
             </Avatar>
             {user.username}
           </Button>

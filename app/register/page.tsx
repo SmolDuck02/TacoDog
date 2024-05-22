@@ -76,7 +76,7 @@ export default function Home() {
     <main className="min-h-screen min-w-screen flex justify-center items-center gap-32">
       <div className="flex flex-col relative h-[32rem] w-[40rem]">
         <Image
-          src="https://media.istockphoto.com/id/909324004/vector/continuous-line-dog-minimalistic-hand-drawing-vector-isolated.jpg?s=612x612&w=0&k=20&c=9Ylp_UZT-WuB37Dyo7S4WUKIc7cl5ChCERcbHMWT5gA="
+          src="/avatars/tacodog.png"
           alt="logo"
           height={300}
           width={300}

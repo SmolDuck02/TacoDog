@@ -18,7 +18,7 @@ export default function MessagesCard({
   messages,
   currentUsername,
 }: {
-  messages: Chat[];
+  messages: Chat[] | undefined;
   currentUsername: string;
 }) {
   return (
@@ -26,7 +26,7 @@ export default function MessagesCard({
       id="messages-container"
       className="scroll-smooth scrollbar h-full p-5 flex flex-col gap-4"
     >
-      {messages[0] ? (
+      {messages ? (
         <CardDescription className=" w-full   gap-4  text-center flex flex-col ">
           {messages.map((message, index) => {
             const isAuthor =

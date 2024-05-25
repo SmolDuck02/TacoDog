@@ -16,7 +16,7 @@ export default function MessagesCard({
       id="messages-container"
       className="scroll-smooth scrollbar h-full p-5 flex flex-col gap-4"
     >
-      {messages && messages[0].user ? (
+      {messages && messages[0]?.user.id ? (
         <CardDescription className=" w-full   gap-4  text-center flex flex-col ">
           {messages.map((message, index) => {
             const isAuthor =
@@ -34,10 +34,10 @@ export default function MessagesCard({
                       src={
                         message.user.username.toLowerCase() === "tacodog"
                           ? "/avatars/tacodog.png"
-                          : "https://github.com/shadcn.png"
+                          : ""
                       }
                     />
-                    <AvatarFallback>U</AvatarFallback>
+                    <AvatarFallback>{message.user.username[0]}</AvatarFallback>
                   </Avatar>
                 )}
                 <div>
@@ -51,7 +51,9 @@ export default function MessagesCard({
                     <Image
                       src={message.chat}
                       alt="image generated response"
-                      className="h-64 w-64 rounded"
+                      className="rounded"
+                      width={200}
+                      height={200}
                     />
                   ) : (
                     <CardContent

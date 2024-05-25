@@ -1,7 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["results.deepinfra.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "results.deepinfra.com",
+        pathname: "**",
+      },
+    ],
   },
 };
 

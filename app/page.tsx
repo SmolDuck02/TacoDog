@@ -19,13 +19,11 @@ import {
 import MessagesCard from "@/components/ui/messages-card";
 import { Textarea } from "@/components/ui/textarea";
 import ThemeModeButton from "@/components/ui/theme-mode-button";
+import { Chat, User } from "@/lib/types";
 import axios from "axios";
 import { Send, SquarePen, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Chat, User } from "@/lib/types";
-
-
 
 function clearLocalStorage() {
   localStorage.removeItem("isLoggedIn");
@@ -158,7 +156,6 @@ export default function Home() {
   }
 
   useEffect(() => {
-  
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     if (isLoggedIn) {
       const username = localStorage.getItem("username") || "";
@@ -175,17 +172,10 @@ export default function Home() {
         `https://web-production-019a.up.railway.app/getPrivateChats/${userId}/`
       );
       const data: PrivateChat[] = response.data.private_chats.flat();
+
       setPrivateChats(data);
 
       console.log("data", data);
-      // defaults to tacodog
-      const defaultChat = data.find((chat) => chat.user2.username.toLowerCase() == "tacodog");
-      console.log("default chat", defaultChat);
-      if (defaultChat) {
-        setActiveChat(defaultChat);
-
-        console.log("def", defaultChat, defaultChat.chats);
-      }
 
       // const privateChatsOnly = privateChats.map((chat) => chat.chats);
       // console.log("Only", privateChatsOnly);
@@ -197,16 +187,38 @@ export default function Home() {
     }
   }
 
+  useEffect(() => {
+    const chatso = privateChats.filter(
+      (chat) =>
+        (chat.user1.id == activeChat.user1.id && chat.user2.id == activeChat.user2.id) ||
+        (chat.user2.id == activeChat.user1.id && chat.user1.id == activeChat.user2.id)
+    )[0];
+    if (chatso) {
+      chatso.chats.sort((a, b) => {
+        if (a.time && b.time) {
+          return new Date(a.time).getTime() - new Date(b.time).getTime();
+        } else {
+          return 0;
+        }
+      });
+      console.log("sorted?", chatso.chats);
+      setActiveChat({ user1: activeChat.user1, user2: activeChat.user2, chats: chatso.chats });
+      setMessages(activeChat.chats);
+    }
+    console.log("ora", chatso, activeChat, currentUser);
+  }, [privateChats]);
+
   useEffect(() => setMessages(activeChat.chats), [activeChat]);
 
-  // useEffect(() => {
-  //   const timer = setInterval(() => {
-  //     getPrivateChats();
-  //   }, 5000);
-  //   return () => {
-  //     clearInterval(timer);
-  //   };
-  // });
+  useEffect(() => {
+    const timer = setInterval(() => {
+      getPrivateChats(currentUser.id);
+    }, 3000);
+    return () => {
+      clearInterval(timer);
+    };
+  }, [currentUser]);
+
   useEffect(() => {
     // Scroll to the bottom of the messages container when messages change
     const messagesContainer = document.getElementById("messages-container");
@@ -252,7 +264,12 @@ export default function Home() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Chats setActiveChat={setActiveChat} users={users} privateChats={privateChats} />
+          <Chats
+            setActiveChat={setActiveChat}
+            users={users}
+            currentUser={currentUser}
+            privateChats={privateChats}
+          />
         </div>
       </div>
       <div className="min-h-screen flex-1 flex flex-col border-x pb-10 ">
@@ -265,8 +282,12 @@ export default function Home() {
             <div className="flex justify-between items-center">
               <div className="flex gap-5 items-center">
                 <Avatar className="h-9 w-9 cursor-pointer">
-                  <AvatarImage src="/avatars/tacodog.png" />
-                  <AvatarFallback>U</AvatarFallback>
+                  {activeChat.user2.username.toLowerCase() == "tacodog" ? (
+                    <AvatarImage src="/avatars/tacodog.png" />
+                  ) : (
+                    <AvatarImage src="" />
+                  )}
+                  <AvatarFallback>{activeChat.user2.username[0]}</AvatarFallback>
                 </Avatar>
                 <CardTitle>{activeChat.user2.username}</CardTitle>
               </div>
@@ -330,20 +351,33 @@ interface PrivateChat {
 interface ChatsProps {
   setActiveChat: (newActiveChat: PrivateChat) => void;
   users: User[];
+  currentUser: User;
   privateChats: PrivateChat[];
 }
 function Chats(props: ChatsProps) {
-  const { setActiveChat, users, privateChats } = props;
+  const { setActiveChat, users, currentUser, privateChats } = props;
+
+  const privateChat = privateChats.filter(
+    (chat) => chat.user1.id == currentUser.id || chat.user2.id == currentUser.id
+  );
+
+  // console.log("amb", privateChat, currentUser);
 
   return (
     <div className="flex mt-2 flex-col scrollbar pt-2 h-4/5 overflow-auto w-full gap-4">
       {/* <span className="flex h-full justify-center items-center text-sm text-muted-foreground">
         No Chats
       </span> */}
+
       {users.map((user, index) => {
-        const privateChat = privateChats.find(
-          (chat) => chat.user2.username === user.username || chat.user1.username === user.username
-        );
+        const privateChat = privateChats.filter(
+          (chat) =>
+            (chat.user1.id == user.id && chat.user2.id == currentUser.id) ||
+            (chat.user2.id == user.id && chat.user1.id == currentUser.id)
+        )[0];
+
+        // console.log("ded", privateChat);
+
         return (
           <Button
             key={index}
@@ -352,13 +386,13 @@ function Chats(props: ChatsProps) {
             onClick={() => {
               if (privateChat) {
                 setActiveChat({
-                  user1: privateChat.user2 == user ? privateChat.user1 : privateChat.user2,
+                  user1: currentUser,
                   user2: user,
                   chats: privateChat.chats,
                 });
               } else {
                 setActiveChat({
-                  user1: { id: 0, username: "" }, // Set proper default values
+                  user1: currentUser, // Set proper default values
                   user2: user,
                   chats: [],
                 });
@@ -366,8 +400,8 @@ function Chats(props: ChatsProps) {
             }}
           >
             <Avatar className="h-9 w-9 cursor-pointer">
-              <AvatarImage src="https://github.com/shadcn.png" />
-              <AvatarFallback>U</AvatarFallback>
+              {/* <AvatarImage src="https://github.com/shadcn.png" /> */}
+              <AvatarFallback>{user.username[0]}</AvatarFallback>
             </Avatar>
             {user.username}
           </Button>

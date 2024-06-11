@@ -1,5 +1,5 @@
 # TacoDog
-A social messaging app with built-in AI, named TacoDog.
+A social messaging web app with built-in AI, named TacoDog.
 
 ## Getting started
 1. Install [pnpm](https://pnpm.io/installation).

@@ -1,4 +1,4 @@
-## TacoDog
+# TacoDog
 A social messaging app with built-in AI, named TacoDog.
 
 ## Getting started

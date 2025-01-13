@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+import BamBam from "@/components/bambam";
 import Account from "@/components/ui/account";
 import { Textarea } from "@/components/ui/textarea";
 import ThemeModeButton from "@/components/ui/theme-mode-button";
@@ -81,21 +82,18 @@ export default function Home() {
     }
   }
 
-  const onSendMessage = () => {
-    setIsSaveMessage(true);
-    setMessages([...messages, { chat: inputText, username: user.username }]);
-  };
+  // async function checkSession() {
+  //   try {
+  //     const response = await axios.get("http://127.0.0.1:8000/check_session/");
+  //     console.log("This is response: ", response);
+  //   } catch (error) {
+  //     console.error("Error checking session:", error);
+  //   }
+  // }
 
-  useEffect(() => {
-    if (inputText.startsWith("!")) askAI();
-    // save all messages
-    if (isSaveMessage) {
-      saveMessage();
-      setIsSaveMessage(false);
-    }
-
-    if (messages[messages.length - 1]?.username != "TacoDog") setInputText("");
-  }, [isSaveMessage]);
+  // useEffect(() => {
+  //   checkSession();
+  // }, [messages]);
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
@@ -116,7 +114,8 @@ export default function Home() {
   });
   return (
     <div className="h-screen w-screen flex justify-center items-center">
-      <Card className="w-1/2  mx-auto">
+
+      <Card className="w-4/5 lg:w-1/2  mx-auto">
         <CardHeader className="static">
           <div className="flex justify-between">
             <div>

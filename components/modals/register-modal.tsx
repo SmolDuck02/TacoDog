@@ -1,4 +1,6 @@
+"use client";
 import { Eye, EyeOff } from "lucide-react";
+import { signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import {
@@ -34,47 +36,63 @@ export default function RegisterModal({
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSignin = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     try {
-      const response = await fetch(`https://web-production-019a.up.railway.app/${url}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await signIn("credentials", {
+        formData,
+        redirect: false,
+      }); 
 
-      if (!response.ok) {
-        const errorData = await response.json();
-
-        setIsError({
-          state: true,
-          message: mode == "Sign Up" ? JSON.parse(errorData.errors).password2[0].code : errorData,
-        });
-
-        console.error(`${mode} error:`, errorData);
-      } else {
-        const data = await response.json();
-        setUser({ id: data.user.id, username: data.user.username });
-
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("username", data.user.username);
-        localStorage.setItem("userId", data.user.id);
-
-        console.log(`${mode} success:`, data);
+      if (response && response.error) {
+        console.log(response);
       }
     } catch (error) {
-      if (error instanceof Error) {
-        setIsError({
-          state: true,
-          message: error.message,
-        });
-        console.error(`${mode} catch error:`, error.message);
-      }
+      console.log(error);
     }
   };
+
+  // const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+
+  //   try {
+  //     const response = await fetch(`http://127.0.0.1:8000/${url}`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify(formData),
+  //     });
+
+  //     if (!response.ok) {
+  //       const errorData = await response.json();
+
+  //       setIsError({
+  //         state: true,
+  //         message: mode == "Sign Up" ? JSON.parse(errorData.errors).password2[0].code : errorData,
+  //       });
+
+  //       console.error(`${mode} error:`, errorData);
+  //     } else {
+  //       const data = await response.json();
+  //       setUser({ id: data.user.id, username: data.user.username });
+
+  //       localStorage.setItem("isLoggedIn", "true");
+  //       localStorage.setItem("username", data.user.username);
+  //       localStorage.setItem("userId", data.user.id);
+
+  //       console.log(`${mode} success:`, data);
+  //     }
+  //   } catch (error) {
+  //     if (error instanceof Error) {
+  //       setIsError({
+  //         state: true,
+  //         message: error.message,
+  //       });
+  //       console.error(`${mode} catch error:`, error.message);
+  //     }
+  //   }
+  // };
 
   useEffect(() => setIsError((prevError) => ({ ...prevError, state: false })), [formData]);
   return (
@@ -83,7 +101,7 @@ export default function RegisterModal({
         <Button variant={`${mode == "Sign In" ? "default" : "ghost"}`}>{mode} </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
-        <form onSubmit={handleSignin}>
+        <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{mode}</DialogTitle>
             <DialogDescription>Send some love: 091m155h3r</DialogDescription>

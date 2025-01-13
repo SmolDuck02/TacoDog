@@ -67,7 +67,10 @@
 }
 
 @layer base {
-  * {
+  *,
+  ::before,
+  ::after {
+    @apply box-border;
     @apply border-border;
   }
   body {

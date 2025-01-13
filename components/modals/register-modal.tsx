@@ -39,10 +39,12 @@ export default function RegisterModal({
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const response = await signIn("credentials", {
-        formData,
+      const response = await signIn("Credentials", {
+        username: formData.username,
+        password1: formData.password1,
+        password2: formData.password2,
         redirect: false,
-      }); 
+      });
 
       if (response && response.error) {
         console.log(response);

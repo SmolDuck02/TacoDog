@@ -17,7 +17,7 @@ export default function MessagesCard({
       className="scroll-smooth scrollbar h-full p-5 flex flex-col gap-4"
     >
       {messages && messages[0]?.user.id ? (
-        <CardDescription className=" w-full   gap-4  text-center flex flex-col ">
+        <div className=" w-full   gap-4  text-center flex flex-col ">
           {messages.map((message, index) => {
             const isAuthor =
               currentUsername == message.user.username &&
@@ -68,12 +68,11 @@ export default function MessagesCard({
               </div>
             );
           })}
-        </CardDescription>
+        </div>
       ) : (
         <CardDescription className="h-full w-full text-center flex text-lg flex-col justify-center items-center">
-          Chat with someone <br /> <span className="text-sm text-[#2e3e5a]">or</span> Chat with
-          TacoDog by <br />
-          <span className="text-sm text-[#2e3e5a]  mt-5">
+          Ask TacoDog
+          <span className="text-sm text-[#3b4f72] ">
             &quot;!&quot; prefix for text-based results! <br />
             &quot;/&quot; prefix for image-based results!
             <br />

@@ -1,5 +1,6 @@
 "use client";
 
+import Account from "@/components/ui/account-avatar";
 import {
   Card,
   CardContent,
@@ -8,12 +9,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-import Account from "@/components/ui/account";
 import { Textarea } from "@/components/ui/textarea";
 import ThemeModeButton from "@/components/ui/theme-mode-button";
 import axios from "axios";
 import { Send, X } from "lucide-react";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface Chat {
@@ -22,6 +23,8 @@ interface Chat {
   time?: string;
 }
 export default function Home() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const [messages, setMessages] = useState<Chat[]>([]);
   const [inputText, setInputText] = useState("");
   const [user, setUser] = useState({ id: 0, username: "Guest" });
@@ -69,6 +72,18 @@ export default function Home() {
     console.log(response.data);
   }
 
+  async function hey() {
+    const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const prompt = "Explain how AI works";
+
+    const result = await model.generateContent(prompt);
+    console.log(result.response.text(), process.env.GEMINI_KEY);
+  }
+
   async function saveMessage() {
     const response = await axios.post("https://web-production-019a.up.railway.app/addChat/", {
       chat: messages[messages.length - 1]?.chat,
@@ -81,74 +96,81 @@ export default function Home() {
     }
   }
 
-  const onSendMessage = () => {
-    setIsSaveMessage(true);
-    setMessages([...messages, { chat: inputText, username: user.username }]);
-  };
+  // async function checkSession() {
+  //   try {
+  //     const response = await axios.get("http://127.0.0.1:8000/check_session/");
+  //     console.log("This is response: ", response);
+  //   } catch (error) {
+  //     console.error("Error checking session:", error);
+  //   }
+  // }
 
+  // useEffect(() => {
+  //   checkSession();
+  // }, [messages]);
+
+  // Handle session-based routing
   useEffect(() => {
-    if (inputText.startsWith("!")) askAI();
-    // save all messages
-    if (isSaveMessage) {
-      saveMessage();
-      setIsSaveMessage(false);
+    if (!session && status !== "loading") {
+      signIn();
     }
+  }, [session]);
 
-    if (messages[messages.length - 1]?.username != "TacoDog") setInputText("");
-  }, [isSaveMessage]);
+  // useEffect(() => {
+  //   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  //   if (isLoggedIn) {
+  //     const username = localStorage.getItem("username") || "";
+  //     const userId = parseInt(localStorage.getItem("userId") || "0", 10);
+  //     setUser({ id: userId, username: username });
+  //   } else signinGuest();
+  // }, []);
 
-  useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-    if (isLoggedIn) {
-      const username = localStorage.getItem("username") || "";
-      const userId = parseInt(localStorage.getItem("userId") || "0", 10);
-      setUser({ id: userId, username: username });
-    } else signinGuest();
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      getChats();
-    }, 5000);
-    return () => {
-      clearInterval(timer);
-    };
-  });
+  // UNCOMMENT THIS AFTER
+  // useEffect(() => {
+  //   const timer = setInterval(() => {
+  //     getChats();
+  //   }, 5000);
+  //   return () => {
+  //     clearInterval(timer);
+  //   };
+  // });
   return (
-    <div className="h-screen w-screen flex justify-center items-center">
-      <Card className="w-1/2  mx-auto">
-        <CardHeader className="static">
-          <div className="flex justify-between">
-            <div>
-              <CardTitle>TacoDogoo</CardTitle>
-              <CardDescription className="p-1 text-xs">
-                AI Chat Assistant - CSIT349 Final Project <br /> (Ask me anything with a <q>!</q>{" "}
-                prefix)
-              </CardDescription>
+    <div className={`flex h-screen w-screen  justify-center items-center`}>
+      {status !== "loading" && (
+        <Card className="w-4/5 lg:w-1/2  mx-auto">
+          <CardHeader className="static">
+            <div className="flex justify-between">
+              <div>
+                <CardTitle>TacoDogoo</CardTitle>
+                <CardDescription className="p-1 text-xs">
+                  AI Chat Assistant - CSIT349 Final Project <br /> (Ask me anything with a <q>!</q>{" "}
+                  prefix)
+                </CardDescription>
+              </div>
+              <div className="flex gap-4 items-center">
+                <ThemeModeButton />
+                <Account username={user.username} setUser={setUser} />
+              </div>
             </div>
-            <div className="flex gap-4 items-center">
-              <ThemeModeButton />
-              <Account username={user.username} setUser={setUser} />
+          </CardHeader>
+          <CardContent>
+            {/* <MessagesCard messages={messages} currentUsername={user.username} /> */}
+          </CardContent>
+          <CardFooter className="flex flex-col gap-3">
+            <Textarea
+              placeholder="Type your message here."
+              onChange={(e) => setInputText(e.target.value)}
+              value={inputText}
+            />
+            <div className="flex gap-3 w-full justify-end">
+              {inputText && (
+                <X size={20} onClick={() => setInputText("")} className="cursor-pointer" />
+              )}
+              <Send size={20} className="cursor-pointer" />
             </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* <MessagesCard messages={messages} currentUsername={user.username} /> */}
-        </CardContent>
-        <CardFooter className="flex flex-col gap-3">
-          <Textarea
-            placeholder="Type your message here."
-            onChange={(e) => setInputText(e.target.value)}
-            value={inputText}
-          />
-          <div className="flex gap-3 w-full justify-end">
-            {inputText && (
-              <X size={20} onClick={() => setInputText("")} className="cursor-pointer" />
-            )}
-            <Send size={20} onClick={onSendMessage} className="cursor-pointer" />
-          </div>
-        </CardFooter>
-      </Card>
+          </CardFooter>
+        </Card>
+      )}
     </div>
   );
 }

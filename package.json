@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:socket": "NODE_OPTIONS='--loader ts-node/esm --trace-warnings --no-warnings' ts-node server.mts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -19,12 +20,13 @@
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-switch": "^1.1.0",
     "@radix-ui/react-tabs": "^1.0.4",
+    "@types/socket.io": "^3.0.2",
     "@upstash/redis": "^1.34.3",
+    "ai": "^4.0.36",
     "axios": "^1.6.8",
     "bcrypt": "^5.1.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "dotenv": "^16.4.7",
     "lucide": "^0.378.0",
     "lucide-react": "^0.378.0",
     "next": "14.2.3",
@@ -32,8 +34,11 @@
     "next-themes": "^0.3.0",
     "react": "^18",
     "react-dom": "^18",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "tailwind-merge": "^2.3.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
     "@types/node": "^20",

@@ -11,6 +11,9 @@ importers:
       '@google/generative-ai':
         specifier: ^0.21.0
         version: 0.21.0
+      '@netlify/plugin-nextjs':
+        specifier: ^5.9.3
+        version: 5.9.3
       '@next-auth/upstash-redis-adapter':
         specifier: ^3.0.4
         version: 3.0.4(@upstash/redis@1.34.3)(next-auth@4.24.11(next@14.2.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
@@ -208,6 +211,10 @@ packages:
   '@mapbox/node-pre-gyp@1.0.11':
     resolution: {integrity: sha512-Yhlar6v9WQgUp/He7BdgzOz8lqMQ8sU+jkCq7Wx8Myc5YFJLbEe7lgui/V7G1qB1DJykHSGwreceSaD60Y0PUQ==}
     hasBin: true
+
+  '@netlify/plugin-nextjs@5.9.3':
+    resolution: {integrity: sha512-760YvPaw6tSPmmX/2sqRzqBehPOfTD6lJoUb+bW+yZhQNyfLyCJR9/cRQP0+fFN2CCmdRWECX4nbi76Qne5/FQ==}
+    engines: {node: '>=18.0.0'}
 
   '@next-auth/upstash-redis-adapter@3.0.4':
     resolution: {integrity: sha512-az9hFemtnSry7YAaVvxPEwGZSbnK8xiRLX/C5bDsM1ibQWSx6aIp7QY3Kk4NSdqU6LONkXnjndKKhrUnwEmfFw==}
@@ -2594,6 +2601,8 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
+
+  '@netlify/plugin-nextjs@5.9.3': {}
 
   '@next-auth/upstash-redis-adapter@3.0.4(@upstash/redis@1.34.3)(next-auth@4.24.11(next@14.2.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
     dependencies:

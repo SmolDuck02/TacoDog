@@ -17,12 +17,12 @@ import { socket } from "../../lib/socketClient";
 const iconSize = 28;
 export default function Home() {
   const router = useRouter();
-  const { data: session, status } = useSession();
-  //   required: true,
-  //   onUnauthenticated() {
-  //     router.push("/register");
-  //   },
-  // });
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated() {
+      router.push("/register");
+    },
+  });
 
   const domain = "http://127.0.0.1:8000";
   // const domain = "https://web-production-019a.up.railway.app";

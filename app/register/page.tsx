@@ -32,7 +32,7 @@ export default function Home() {
     // } else {
     //   setMode("Sign In");
     // }
-  }, [session]);
+  }, [session, router]);
 
   useEffect(() => {
     if (mode.match("Sign Up")) {
@@ -44,7 +44,7 @@ export default function Home() {
         if (!isValid.show || !confirmPassword) setIsValid({ ...isValid, show: false });
       }
     }
-  }, [formData, confirmPassword, mode]);
+  }, [formData, confirmPassword, isValid, mode]);
   useEffect(() => {
     if (mode.match("Sign Up")) {
       if (
@@ -64,7 +64,7 @@ export default function Home() {
         else setIsValid({ ...isValid, show: false });
       }
     }
-  }, [formData, mode]);
+  }, [formData, confirmPassword, isValid, mode]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value != " ")

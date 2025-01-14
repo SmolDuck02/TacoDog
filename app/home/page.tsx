@@ -114,7 +114,7 @@ export default function Home() {
     if (!session && status !== "loading") {
       signIn();
     }
-  }, [session]);
+  }, [session, status]);
 
   // useEffect(() => {
   //   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";

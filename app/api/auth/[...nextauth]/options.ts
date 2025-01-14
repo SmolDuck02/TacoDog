@@ -3,7 +3,6 @@ import { UpstashRedisAdapter } from "@next-auth/upstash-redis-adapter";
 import { Redis } from "@upstash/redis";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { useSession } from "next-auth/react";
 
 const bcrypt = require("bcrypt");
 const redis = Redis.fromEnv();
@@ -17,9 +16,6 @@ export const options: NextAuthOptions = {
       async authorize(credentials) {
         const { formData, mode } = credentials as { mode: string; formData: string };
         const { username, password } = JSON.parse(formData);
-
-        const { data: session } = useSession();
-        if (session) return session.user as User;
 
         let user = await redis.get(`user:${username}`);
         try {

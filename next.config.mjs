@@ -4,11 +4,13 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "results.deepinfra.com",
-        pathname: "**",
+        hostname: "**.example.com",
+        port: "",
       },
     ],
   },
 };
 
 export default nextConfig;
+
+// LEARN MORE https://nextjs.org/docs/pages/api-reference/components/image#remotepatterns

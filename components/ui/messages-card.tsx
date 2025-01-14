@@ -1,53 +1,45 @@
-import { Chat } from "@/lib/types";
-import Image from "next/image";
+import type { ChatHistory, User } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
 import { CardContent, CardDescription } from "./card";
 import { Label } from "./label";
 
 export default function MessagesCard({
   messages,
-  currentUsername,
+  chatUsers: { currentUser, chatMate },
 }: {
-  messages: Chat[] | undefined;
-  currentUsername: string;
+  messages: ChatHistory[] | null;
+  chatUsers: { currentUser: User | null; chatMate: User | null };
 }) {
   return (
-    <CardContent
-      id="messages-container"
-      className="scroll-smooth scrollbar h-full p-5 flex flex-col gap-4"
+    <div
+      // id="messages-container"
+      className="scroll-smooth bg-green-700  flex-1 scrollbar  p-5 flex flex-col justify-end  gap-4"
     >
-      {messages && messages[0]?.user.id ? (
-        <div className=" w-full   gap-4  text-center flex flex-col ">
-          {messages.map((message, index) => {
-            const isAuthor =
-              currentUsername == message.user.username &&
-              message.user.username.toLowerCase() !== "guest";
-            return (
-              <div
-                id={index.toString()}
-                key={index}
-                className={`flex gap-4 ${isAuthor && "self-end"} items-end`}
-              >
-                {!isAuthor && (
-                  <Avatar className="mb-1">
-                    <AvatarImage
-                      src={
-                        message.user.username.toLowerCase() === "tacodog"
-                          ? "/avatars/tacodog.png"
-                          : ""
-                      }
-                    />
-                    <AvatarFallback>{message.user.username[0]}</AvatarFallback>
-                  </Avatar>
-                )}
-                <div>
-                  <Label
-                    htmlFor={index.toString()}
-                    className="pl-2 flex justify-start text-xs text-slate-500"
-                  >
-                    {message.user.username}
-                  </Label>
-                  {message && message.chat.toLowerCase().startsWith("https") ? (
+      {messages && currentUser && chatMate ? (
+        messages.map((message, index) => {
+          console.log(messages, message, message.senderID, currentUser.id);
+          const isAuthor = message.senderID == currentUser.id;
+          const author: User = isAuthor ? currentUser : chatMate;
+          return (
+            <div
+              id={index.toString()}
+              key={index}
+              className={`flex bg-orange-400 w-fit gap-4 ${isAuthor && "self-end"} items-end`}
+            >
+              {!isAuthor && (
+                <Avatar className="mb-1">
+                  <AvatarImage src={"/avatars/tacodog.png"} />
+                  <AvatarFallback>{author.username[0]}</AvatarFallback>
+                </Avatar>
+              )}
+              <div className={`${isAuthor ? "items-end" : "items-start"} flex flex-col `}>
+                <Label
+                  htmlFor={index.toString()}
+                  className="px-2 flex justify-start text-xs text-slate-500"
+                >
+                  {author.username}
+                </Label>
+                {/* {message && message.chat.toLowerCase().startsWith("https") ? (
                     <Image
                       src={message.chat}
                       alt="image generated response"
@@ -55,22 +47,21 @@ export default function MessagesCard({
                       width={200}
                       height={200}
                     />
-                  ) : (
-                    <CardContent
-                      id={index.toString()}
-                      key={index}
-                      className="border p-3 flex items-start  text-left w-auto rounded-lg"
-                    >
-                      {message.chat}
-                    </CardContent>
-                  )}
-                </div>
+                  ) : ( */}
+                <CardContent
+                  id={index.toString()}
+                  key={index}
+                  className="border p-3 flex items-start  text-left w-auto rounded-lg"
+                >
+                  {message.chatMessage}
+                </CardContent>
+                {/* )} */}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })
       ) : (
-        <CardDescription className="h-full w-full text-center flex text-lg flex-col justify-center items-center">
+        <CardDescription className="h-full bg-black w-full text-center flex text-lg flex-col justify-center items-center">
           Ask TacoDog
           <span className="text-sm text-[#3b4f72] ">
             &quot;!&quot; prefix for text-based results! <br />
@@ -80,6 +71,6 @@ export default function MessagesCard({
           </span>
         </CardDescription>
       )}
-    </CardContent>
+    </div>
   );
 }

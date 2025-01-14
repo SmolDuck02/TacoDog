@@ -3,6 +3,7 @@ import { UpstashRedisAdapter } from "@next-auth/upstash-redis-adapter";
 import { Redis } from "@upstash/redis";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { useSession } from "next-auth/react";
 
 const bcrypt = require("bcrypt");
 const redis = Redis.fromEnv();
@@ -16,15 +17,11 @@ export const options: NextAuthOptions = {
       async authorize(credentials) {
         const { formData, mode } = credentials as { mode: string; formData: string };
         const { username, password } = JSON.parse(formData);
-        console.log(
-          username,
-          password,
-          JSON.stringify(formData),
-          credentials,
-          JSON.stringify(credentials)
-        );
+
+        const { data: session } = useSession();
+        if (session) return session.user as User;
+
         let user = await redis.get(`user:${username}`);
-        console.log("user is you", user);
         try {
           if (mode === "Sign In") {
             if (!user) {
@@ -41,7 +38,7 @@ export const options: NextAuthOptions = {
             if (user) {
               throw new Error("User already exists!");
             }
-            const id = await redis.incr("user:id");
+            const id = await redis.incr("userCounter:id");
             const hashedPassword = await bcrypt.hash(password, 10);
             //redis.set dont return the record created, only an 'OK'
             await redis.set(`user:${username}`, {
@@ -52,6 +49,7 @@ export const options: NextAuthOptions = {
           }
 
           user = await redis.get(`user:${username}`);
+          console.log(`Auth fetched user: ${user}`);
           return user as User;
         } catch (error) {
           console.error(`${mode} catch error:`, error);
@@ -78,17 +76,15 @@ export const options: NextAuthOptions = {
     },
     async jwt({ token, user }) {
       if (user) token.user = user as User;
-      console.log(token, user);
       return token;
     },
     async session({ session, token }) {
       if (token) session.user = token.user as User;
-      console.log(session, token);
       return session;
     },
   },
   pages: {
     signIn: "/register",
+    error: "/register",
   },
-  debug: true,
 };

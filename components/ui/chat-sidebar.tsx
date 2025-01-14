@@ -14,10 +14,10 @@ import { Input } from "./input";
 import { Switch } from "./switch";
 
 export default function ChatSidebar({
-  users,
+  allUsers,
   handleSetActiveChat,
 }: {
-  users: User[];
+  allUsers: User[];
   handleSetActiveChat: (id: string) => void;
 }) {
   const { data: session } = useSession();
@@ -42,7 +42,7 @@ export default function ChatSidebar({
   }
 
   return (
-    <div className={`  h-full  max-w-[18rem] ${isChatSidebar ? "w-full" : "w-[65px]"} relative`}>
+    <div className={`  h-full  max-w-[18rem] ${isChatSidebar ? "w-full" : "w-[5rem]"} relative`}>
       <div className="w-full h-screen flex flex-col">
         <CardTitle className="border-b h-16 flex items-end text-5xl p-2 ">
           <span className={`flex`}>{isChatSidebar ? "/tacodog" : "/t"}</span>
@@ -74,9 +74,8 @@ export default function ChatSidebar({
         <div
           className={` bg-slate-800 py-3 flex w-full h-full scrollbar overflow-auto flex-col gap-4 px-3`}
         >
-          {users
-            .filter((user: User) => user.id != (session?.user as User).id)
-            .map((user: User, index: number) => (
+          {session &&
+            allUsers.map((user: User, index: number) => (
               <div
                 onClick={() => handleSetActiveChat(user.id)}
                 key={user.id}
@@ -117,10 +116,10 @@ export default function ChatSidebar({
             style={{ borderTopLeftRadius: "8px", borderTopRightRadius: "8px" }}
           />
         </div>
-        <div className=" flex justify-center items-center p-3 gap-2">
+        <div className=" flex justify-center items-center px-2 gap-2">
           <div
             onClick={toggleAccountSidebar}
-            className={` rounded flex gap-4 items-center w-full cursor-pointer hover:bg-slate-700`}
+            className={` rounded flex gap-4 items-center p-2 w-full cursor-pointer hover:bg-slate-700`}
           >
             <Avatar className="h-9 w-9 ">
               <AvatarImage src="https://github.com/shadcn.png" />
@@ -129,10 +128,10 @@ export default function ChatSidebar({
             <span className={` ${isChatSidebar ? "flex" : "hidden"} `}>Guest</span>
           </div>
           {isAccountSidebar && (
-            <Minimize size={iconSize} onClick={toggleAccountSidebar} className=" cursor-pointer" />
+            <Minimize size={iconSize} onClick={toggleAccountSidebar} className="m-3 cursor-pointer" />
           )}
           {isChatSidebar && (
-            <Columns2 size={iconSize} onClick={toggleChatSidebar} className=" cursor-pointer" />
+            <Columns2 size={iconSize} onClick={toggleChatSidebar} className="m-3 cursor-pointer" />
           )}
         </div>
         <div

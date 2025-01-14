@@ -22,18 +22,18 @@ export default function Home() {
   const [formData, setFormData] = useState<User>({ id: "", username: "", password: "" });
   const [confirmPassword, setConfirmPassword] = useState<String>("");
 
-  // REPLACED WITH CALLBACKS
-  // useEffect(() => {
-  //   setIsLoading(false);
-  //   if (session) {
-  //     router.push("/chat");
-  //   }
-  //   // if (session && mode == "Sign In") {
-  //   //   router.push("/");
-  //   // } else {
-  //   //   setMode("Sign In");
-  //   // }
-  // }, [session]);
+  useEffect(() => {
+    // setIsLoading(false);
+    if (session) {
+      router.push("/chat");
+    }
+    // if (session && mode == "Sign In") {
+    //   router.push("/");
+    // } else {
+    //   setMode("Sign In");
+    // }
+  }, [session]);
+
   useEffect(() => {
     if (mode.match("Sign Up")) {
       if (confirmPassword && !(confirmPassword === (formData.password || " "))) {
@@ -192,7 +192,11 @@ export default function Home() {
     setConfirmPassword("");
   }, [mode]);
   return (
-    <main className="min-h-screen min-w-screen flex justify-center items-center gap-32">
+    <main
+      className={`${
+        status !== "loading" && !session?.user ? "flex" : "hidden"
+      } min-h-screen min-w-screen justify-center items-center gap-32`}
+    >
       <div className="flex flex-col relative h-[32rem] w-[40rem]">
         <Image
           src="/avatars/tacodog.png"

@@ -72,44 +72,46 @@ export default function Home() {
   }, []);
 
   const handleSetActiveChat = (id: string) => {
-    setActiveChatUser(allUsers.filter((user) => user.id === id)[0]);
-  };
-
-  useEffect(() => {
-    if (activeChatUser && currentUser) {
-      const chatusers = [activeChatUser.id, currentUser.id].sort().join("");
-      setChatUsers(chatusers);
-
-      getActiveChatHistory(chatusers).then((chatHistory) => {
-        console.log("this is chatHistory", chatHistory);
+    if (currentUser) {
+      const IDs = [id, currentUser.id].sort().join("");
+      getActiveChatHistory(IDs).then((chatHistory) => {
         setActiveChatHistory(chatHistory as ChatHistory[]);
+        setActiveChatUser(allUsers.filter((user) => user.id === id)[0]);
       });
     }
-  }, [activeChatUser, activeChatHistory, currentUser]);
+  };
 
   const handleSendMessage = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (socket.connected && e.key === "Enter" && activeChatUser && currentUser && chatMessage) {
       e.preventDefault();
+      if (chatMessageRef.current) chatMessageRef.current.textContent = "";
 
+      const chatUsersID = [activeChatUser.id, currentUser.id].sort().join("");
       const chatHistory = {
         chatUsersID: chatUsersID,
         newChatMessage: { senderID: currentUser.id, chatMessage: chatMessage },
+        activeChatHistory: activeChatHistory || [],
       };
+
+      //user input
       socket.emit("sendChat", chatHistory);
-      socket.on(`receiveChat:${chatUsersID}`, (value) => {
+      socket.on(`receiveChat:${chatUsersID}`, async (value) => {
         setActiveChatHistory([...(activeChatHistory || []), value]);
       });
 
-      if (chatMessage.startsWith("@")) {
+      //ai output
+      if (chatMessage.startsWith("@t")) {
         const result = await askTacoDog(chatMessage);
-        console.log(result);
-        socket.emit("sendChat", { chatUsersID: chatUsersID, newChatMessage: result });
+        socket.emit("sendChat", {
+          ...chatHistory,
+          newChatMessage: result,
+          activeChatHistory: [...(activeChatHistory as ChatHistory[]), chatHistory.newChatMessage],
+        });
         socket.on(`receiveChat:${chatUsersID}`, (value) => {
-          setActiveChatHistory([...(activeChatHistory || []), value]);
+          setActiveChatHistory([...(activeChatHistory || []), chatHistory.newChatMessage, value]);
         });
       }
 
-      if (chatMessageRef.current) chatMessageRef.current.textContent = "";
       setChatMessage("");
     }
   };
@@ -392,8 +394,8 @@ export default function Home() {
           <Image fill src="/bg/trees.jpg" objectFit="cover" alt="user banner" />
         </div>
         {activeChatUser ? (
-          <div className="bg-blue-300 h-[90%]  w-[60%] mx-auto flex flex-col relative  ">
-            <div className="  p-5 absolute w-full backdrop-blur-md">
+          <div className="bg-blue-300 h-[90%]   w-[60%] mx-auto flex flex-col relative  ">
+            <div className="  p-5 z-50 absolute w-full backdrop-blur-md">
               <div className="flex justify-between items-center">
                 <div className="flex gap-5 items-center">
                   <Avatar className="h-9 w-9 cursor-pointer">
@@ -411,7 +413,7 @@ export default function Home() {
             <div
               // ref="messages-container"
               ref={messageContainerRef}
-              className="bg-slate-700 flex-1 p-12 flex gap-5 scrollbar scroll-smooth flex-col overflow-y-scroll"
+              className="bg-slate-700 flex-1 pb-8 p-12 flex gap-5 scrollbar scroll-smooth flex-col overflow-y-scroll"
             >
               <div className="min-h-8"></div>
               {activeChatHistory && currentUser && activeChatUser ? (
@@ -430,7 +432,7 @@ export default function Home() {
                       className={`flex   w-fit gap-4 ${isAuthor && "self-end"} items-end`}
                     >
                       {!isAuthor && (
-                        <Avatar className="mb-1">
+                        <Avatar className="mb-1 z-0">
                           <AvatarImage src={"/avatars/tacodog.png"} />
                           <AvatarFallback>{author.username[0]}</AvatarFallback>
                         </Avatar>
@@ -479,12 +481,12 @@ export default function Home() {
               messages={activeChatHistory}
               chatUsers={{ currentUser: currentUser, chatMate: activeChatUser }}
             /> */}
-            <div className="bg-yellow-600 max-h-60 overflow-x-hidden mt-2 mb-16 flex gap-2 w-[95%] mx-auto ">
+            <div className="max-h-60 overflow-x-hidden mt-2 mb-16 flex gap-2 w-[95%] mx-auto ">
               <span
                 ref={chatMessageRef}
                 onInput={(e) => setChatMessage((e.target as HTMLElement).textContent)}
                 contentEditable
-                className="p-4 w-full textarea"
+                className="bg-yellow-800 p-4 rounded-lg   w-full textarea"
                 role="textbox"
                 onKeyDown={handleSendMessage}
               ></span>

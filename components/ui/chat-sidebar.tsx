@@ -1,5 +1,6 @@
 "use client";
 
+import { getActiveChatHistory } from "@/lib/api";
 import { User } from "@/lib/types";
 import { iconSize } from "@/lib/utils";
 import { Columns2, Minimize, Search, SquarePen } from "lucide-react";
@@ -128,7 +129,11 @@ export default function ChatSidebar({
             <span className={` ${isChatSidebar ? "flex" : "hidden"} `}>Guest</span>
           </div>
           {isAccountSidebar && (
-            <Minimize size={iconSize} onClick={toggleAccountSidebar} className="m-3 cursor-pointer" />
+            <Minimize
+              size={iconSize}
+              onClick={toggleAccountSidebar}
+              className="m-3 cursor-pointer"
+            />
           )}
           {isChatSidebar && (
             <Columns2 size={iconSize} onClick={toggleChatSidebar} className="m-3 cursor-pointer" />

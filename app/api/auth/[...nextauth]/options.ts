@@ -1,4 +1,4 @@
-import type { Error, User } from "@/lib/types";
+import type { User } from "@/lib/types";
 import { UpstashRedisAdapter } from "@next-auth/upstash-redis-adapter";
 import { Redis } from "@upstash/redis";
 import type { NextAuthOptions } from "next-auth";
@@ -62,14 +62,6 @@ export const options: NextAuthOptions = {
   },
 
   callbacks: {
-    async signIn({ user, credentials }) {
-      const rawError = (user as Error).error || (user as Error).error?.errors; //returns a dict that has either error or errors
-
-      if (rawError) {
-        throw new Error(JSON.stringify(rawError));
-      }
-      return true;
-    },
     async jwt({ token, user }) {
       if (user) token.user = user as User;
       return token;

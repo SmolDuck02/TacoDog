@@ -24,7 +24,7 @@ export default function Home() {
 
   useEffect(() => {
     // setIsLoading(false);
-    if (session) {
+    if (session && session.user) {
       router.push("/chat");
     }
     // if (session && mode == "Sign In") {
@@ -34,22 +34,26 @@ export default function Home() {
     // }
   }, [session, router]);
 
+  //confirmation password validation
   useEffect(() => {
-    if (mode.match("Sign Up")) {
-      if (confirmPassword && !(confirmPassword === (formData.password || " "))) {
-        if (!isValid.show) setIsValid({ show: true, message: "Passwords don't match!" });
-      } else if (formData.password === confirmPassword) {
-        setIsValid({ ...isValid, show: false });
-      } else {
-        if (!isValid.show || !confirmPassword) setIsValid({ ...isValid, show: false });
-      }
+    if (
+      (!confirmPassword && formData.password) ||
+      (confirmPassword && !(confirmPassword === (formData.password || " ")))
+    ) {
+      if (!isValid.show) setIsValid({ show: true, message: "Passwords don't match!" });
+    } else if (formData.password === confirmPassword) {
+      setIsValid({ ...isValid, show: false });
+    } else {
+      if (!isValid.show || !confirmPassword) setIsValid({ ...isValid, show: false });
     }
-  }, [formData, confirmPassword, isValid, mode]);
+  }, [confirmPassword]);
+
+  //password validation
   useEffect(() => {
     if (mode.match("Sign Up")) {
       if (
         formData.password &&
-        !formData.password.match(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+        !formData.password.match(/^(?=.*[A-Za-z])(?=.*\d)(?=.*\W)[A-Za-z\d\W]{8,}$/)
       ) {
         setIsValid({
           show: true,
@@ -59,12 +63,12 @@ export default function Home() {
       } else if (formData.password === confirmPassword) {
         setIsValid({ ...isValid, show: false });
       } else {
-        if (isValid.show && confirmPassword)
-          setIsValid({ ...isValid, message: "Passwords don't match!" });
+        if ((!formData.password && confirmPassword) || formData.password !== confirmPassword)
+          setIsValid({ show: true, message: "Passwords don't match!" });
         else setIsValid({ ...isValid, show: false });
       }
     }
-  }, [formData, confirmPassword, isValid, mode]);
+  }, [formData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value != " ")
@@ -89,24 +93,14 @@ export default function Home() {
         const response = await signIn("credentials", {
           formData: JSON.stringify(formData),
           mode: mode,
+          redirect: false,
           callbackUrl: "/chat",
         });
 
         console.log("response", response);
         const { error } = response as { error: string };
         if (error) {
-          setIsError((prev) => ({ show: true, message: error }));
-          // const parsedRes = JSON.parse(response.error);
-          // setIsLoading(false);
-          // if (mode == "Sign In") {
-          //   setIsError({ show: true, message: parsedRes.error });
-          // } else {
-          //   const errors = JSON.parse(parsedRes.errors);
-          //   setIsError({
-          //     show: true,
-          //     message: errors.confirmPassword.map((error: { code: string }) => error.code).join(", "),
-          //   });
-          // }
+          setIsError({ show: true, message: error });
         }
       } catch (error) {
         console.error(`${mode} error`, error);

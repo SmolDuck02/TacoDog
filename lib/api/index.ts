@@ -30,7 +30,7 @@ export const redis = new Redis({
 export async function getAllUsers() {
   try {
     const keys = await redis.keys("user:*");
-    console.log(keys);
+
     if (keys.length === 0) {
       console.log("No records found");
       return [];
@@ -40,7 +40,7 @@ export async function getAllUsers() {
       id: values[index].id,
       username: values[index].username,
     }));
-    console.log("This is all user recs", records);
+
     return records;
   } catch (error) {
     console.error("Error fetching all records:", error);
@@ -51,7 +51,6 @@ export async function getAllUsers() {
 export async function getActiveChatHistory(chatUsers: string) {
   try {
     const chatHistory = await redis.get(`chatHistory:${chatUsers}`);
-    console.log(`This is chat history with ${chatUsers}`, chatHistory);
     return chatHistory;
   } catch (error) {
     console.error(`Error fetching chat history with ${chatUsers}`, error);
@@ -64,7 +63,7 @@ const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_KEY);
 const model = genAI.getGenerativeModel({
   model: "gemini-1.5-flash",
   systemInstruction:
-    "You are an social person named TacoDog. You are to help and guide the users of their queries.",
+    "You are an social person named TacoDog. You are to help and guide the users of their queries. Just use plain text, no characters that make text bold or italic, just plain text",
 });
 
 export async function askTacoDog(prompt: string) {
@@ -83,3 +82,4 @@ export async function askTacoDog(prompt: string) {
   const result = await chat.sendMessage(prompt.slice(1));
   return { senderID: "TacoDog", chatMessage: result.response.text() };
 }
+

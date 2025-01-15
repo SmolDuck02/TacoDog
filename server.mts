@@ -2,7 +2,6 @@ import { Redis } from "@upstash/redis";
 import next from "next";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
-import { ChatHistory } from "./lib/types";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -22,17 +21,20 @@ app.prepare().then(() => {
   const io = new Server(httpServer, { connectionStateRecovery: {} });
 
   io.on("connection", async (socket) => {
-    console.log(`A user connected ${socket.id}`);
+    // await redis.del(`chatHistory:116`);
+    console.log(`A user connected: ${socket.id}`);
 
     socket.on("sendChat", async (data) => {
-      console.log("ChatMessage received:", data);
+      const { activeChatHistory, chatUsersID, newChatMessage } = data;
 
-      let chatHistory: ChatHistory[] = (await redis.get(`chatHistory:${data.chatUsersID}`)) || [];
-      chatHistory.push(data.newChatMessage);
+      console.log("ChatMessage received:", chatUsersID, newChatMessage);
 
-      await redis.set(`chatHistory:${data.chatUsersID}`, chatHistory);
-      console.log("Pushed new chat to history");
-      io.emit(`receiveChat:${data.chatUsersID}`, data.newChatMessage);
+      io.emit(`receiveChat:${chatUsersID}`, newChatMessage);
+
+      activeChatHistory.push(newChatMessage);
+
+      await redis.set(`chatHistory:${chatUsersID}`, activeChatHistory);
+      console.log(activeChatHistory, `Successfully pushed new chat to history`);
     });
 
     socket.on("disconnect", () => {

@@ -10,5 +10,5 @@
     "isolatedModules": false
   },
 
-  "include": ["server.ts"]
+  "include": ["server.mts"]
 }

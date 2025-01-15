@@ -28,7 +28,7 @@
     ".next/types/**/*.ts",
     "lib/api/index.ts",
     "server.mts",
-    "lib/socketClient.js",
+    "lib/socketClient.js", "register.js",
   ],
   "exclude": ["node_modules"]
 }

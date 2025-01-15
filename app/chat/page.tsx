@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import ChatSidebar from "@/components/ui/chat-sidebar";
 import { askTacoDog, getActiveChatHistory, getAllUsers, TacoDog } from "@/lib/api";
+import { socket } from "@/lib/socketClient";
 import { Chat, ChatHistory, User } from "@/lib/types";
+import chatBanner from "@/public/bg/trees.jpg";
 import { Label } from "@radix-ui/react-label";
 import axios from "axios";
 import { CircleEllipsis } from "lucide-react";
@@ -12,8 +14,6 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { socket } from "../../lib/socketClient";
-
 const iconSize = 28;
 export default function Home() {
   const router = useRouter();
@@ -391,7 +391,7 @@ export default function Home() {
         <div className="relative border-b w-full min-h-24 flex items-center justify-center text-center text-xs ">
           {/* AI Chat Assistant - CSIT349 Final Project <br /> (Ask TacoDog anything with a
             &quot;!&quot; prefix) */}
-          <Image fill src="/bg/trees.jpg" objectFit="cover" alt="user banner" />
+          <Image fill src={chatBanner} objectFit="cover" alt="user banner" />
         </div>
         {activeChatUser ? (
           <div className="bg-blue-300 h-[90%]   w-[60%] mx-auto flex flex-col relative  ">

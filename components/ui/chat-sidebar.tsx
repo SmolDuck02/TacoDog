@@ -1,8 +1,8 @@
 "use client";
 
-import { getActiveChatHistory } from "@/lib/api";
 import { User } from "@/lib/types";
 import { iconSize } from "@/lib/utils";
+import chatBanner from "@/public/bg/trees.jpg";
 import { Columns2, Minimize, Search, SquarePen } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
@@ -110,7 +110,7 @@ export default function ChatSidebar({
           } border-b border-gray-400 w-full h-16 items-end text-4xl `}
         >
           <Image
-            src={"/bg/trees.jpg"}
+            src={chatBanner}
             alt="User Banner"
             fill={true}
             objectFit="cover"

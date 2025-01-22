@@ -2,17 +2,14 @@
 
 import { User } from "@/lib/types";
 import { iconSize } from "@/lib/utils";
-import chatBanner from "@/public/bg/trees.jpg";
-import { Columns2, Minimize, Search, SquarePen } from "lucide-react";
-import { signOut, useSession } from "next-auth/react";
+import { Columns2, Search, SquarePen } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
-import Image from "next/image";
 import { useEffect, useState } from "react";
+import { ProfileModal } from "../modals/profile-modal";
 import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
-import { Button } from "./button";
 import { CardTitle } from "./card";
 import { Input } from "./input";
-import { Switch } from "./switch";
 
 export default function ChatSidebar({
   allUsers,
@@ -22,9 +19,10 @@ export default function ChatSidebar({
   handleSetActiveChat: (id: string) => void;
 }) {
   const { data: session } = useSession();
+  const user = session?.user as User;
   const { theme, setTheme } = useTheme();
   const [checked, setChecked] = useState(false);
-  const [isChatSidebar, setChatSidebar] = useState(false);
+  const [isChatSidebar, setIsChatSidebar] = useState(false);
   const [isAccountSidebar, setAccountSidebar] = useState(false);
 
   useEffect(() => {
@@ -33,23 +31,32 @@ export default function ChatSidebar({
   function toggleMode() {
     setTheme(theme == "light" ? "dark" : "light");
   }
+
   function toggleAccountSidebar() {
     setAccountSidebar(!isAccountSidebar);
-    setChatSidebar(true);
+    setIsChatSidebar(true);
   }
   function toggleChatSidebar() {
-    setChatSidebar(!isChatSidebar);
+    setIsChatSidebar(!isChatSidebar);
     setAccountSidebar(false);
   }
 
   return (
-    <div className={`  h-full  max-w-[18rem] ${isChatSidebar ? "w-full" : "w-[5rem]"} relative`}>
-      <div className="w-full h-screen flex flex-col">
-        <CardTitle className="border-b h-16 flex items-end text-5xl p-2 ">
+    <div
+      className={`  h-screen  max-w-[14rem] border ${
+        isChatSidebar ? "w-full" : "w-[5rem]"
+      } relative`}
+    >
+      <div className="w-full  flex flex-col">
+        <CardTitle
+          className={`border-b h-28 flex items-end text-5xl ${
+            isChatSidebar ? "justify-start" : "justify-center"
+          } p-2 `}
+        >
           <span className={`flex`}>{isChatSidebar ? "/tacodog" : "/t"}</span>
         </CardTitle>
 
-        <div className="flex  flex-col gap-3 items-center p-3">
+        <div className="flex border-b-2 flex-col gap-3 items-center p-3">
           <div
             className={`flex w-full items-center  ${
               isChatSidebar ? "justify-between" : "justify-center"
@@ -58,106 +65,73 @@ export default function ChatSidebar({
             <span className={`${isChatSidebar ? "flex" : "hidden"}  relative bottom-[-0.3rem]`}>
               Chats
             </span>
-            <SquarePen size={iconSize} className=" cursor-pointer" />
-          </div>
-
-          <div className="flex gap-2 w-full justify-center">
-            <Input
-              className={`${isChatSidebar ? "flex" : "hidden"} `}
-              placeholder="Find someone..."
-              // value={searchText}
-              // onChange={(e) => setSearchText(e.target.value)}
+            <SquarePen
+              size={iconSize}
+              className=" cursor-pointer"
+              onClick={() => setIsChatSidebar(true)}
             />
-
-            <Search size={iconSize} className=" cursor-pointer" />
           </div>
+
+          {isChatSidebar ? (
+            <div className="relative flex gap-2 w-full justify-end items-center">
+              <Input
+                className={` pr-8`}
+                placeholder="Find someone..."
+                // value={searchText}
+                // onChange={(e) => setSearchText(e.target.value)}
+              />
+
+              <Search size={20} className="absolute text-slate-500 mr-2 cursor-pointer" />
+            </div>
+          ) : (
+            <Search
+              size={iconSize}
+              className="cursor-pointer"
+              onClick={() => setIsChatSidebar(true)}
+            />
+          )}
         </div>
+
+        {/* user chats */}
         <div
-          className={` bg-slate-800 py-3 flex w-full h-full scrollbar overflow-auto flex-col gap-4 px-3`}
+          className={`  py-2 flex w-full ${
+            isChatSidebar ? "h-[31rem]" : "h-[27.5rem]"
+          } scrollbar overflow-auto flex-col gap-4 px-3`}
         >
           {session &&
             allUsers.map((user: User, index: number) => (
               <div
                 onClick={() => handleSetActiveChat(user.id)}
                 key={user.id}
-                className="flex hover:bg-black hover:cursor-pointer p-2 rounded w-full items-center justify-start gap-3"
+                className={`flex gap-3 ${
+                  isChatSidebar && "hover:bg-black "
+                } hover:cursor-pointer p-2 rounded w-full items-center`}
               >
                 <Avatar className="h-9 w-9 ">
                   <AvatarImage src="https://github.com/shadcn.png" />
                   <AvatarFallback>U</AvatarFallback>
                 </Avatar>
-                <CardTitle className="text-lg">{user.username}</CardTitle>
+                {isChatSidebar && (
+                  <CardTitle className="text-lg font-light">{user.username}</CardTitle>
+                )}
               </div>
             ))}
         </div>
       </div>
 
+      {/* profile header */}
       <div
-        className={`bg-black w-full flex flex-col gap-1 py-2 ${
-          isAccountSidebar && " h-[50%]"
-        } absolute  bottom-2`}
+        className={` ${isChatSidebar ? "flex-row" : "flex-col h-32"}
+            ${!isAccountSidebar && "p-2"}
+          } border-t-2 flex justify-center items-center  gap-1`}
       >
-        <Columns2
-          onClick={toggleChatSidebar}
-          size={iconSize}
-          className={`${
-            (isAccountSidebar || isChatSidebar) && "hidden"
-          }  w-full mx-auto cursor-pointer `}
-        />
-        <div
-          className={` ${
-            isAccountSidebar ? "relative" : "hidden"
-          } border-b border-gray-400 w-full h-16 items-end text-4xl `}
-        >
-          <Image
-            src={chatBanner}
-            alt="User Banner"
-            fill={true}
-            objectFit="cover"
-            style={{ borderTopLeftRadius: "8px", borderTopRightRadius: "8px" }}
-          />
-        </div>
-        <div className=" flex justify-center items-center px-2 gap-2">
-          <div
-            onClick={toggleAccountSidebar}
-            className={` rounded flex gap-4 items-center p-2 w-full cursor-pointer hover:bg-slate-700`}
-          >
-            <Avatar className="h-9 w-9 ">
-              <AvatarImage src="https://github.com/shadcn.png" />
-              <AvatarFallback>U</AvatarFallback>
-            </Avatar>
-            <span className={` ${isChatSidebar ? "flex" : "hidden"} `}>Guest</span>
-          </div>
-          {isAccountSidebar && (
-            <Minimize
-              size={iconSize}
-              onClick={toggleAccountSidebar}
-              className="m-3 cursor-pointer"
-            />
-          )}
-          {isChatSidebar && (
-            <Columns2 size={iconSize} onClick={toggleChatSidebar} className="m-3 cursor-pointer" />
-          )}
-        </div>
-        <div
-          className={` ${
-            isAccountSidebar ? "absolute" : "hidden"
-          } w-full py-3 px-6 text-sm flex flex-col`}
-        >
-          <div className="flex w-full justify-between">
-            Dark mode
-            <Switch onClick={toggleMode} checked={checked} />
-          </div>
-        </div>
-        <div className={` ${isAccountSidebar ? "absolute" : "hidden"} bottom-2 w-full px-3`}>
-          <Button
-            variant="ghost"
-            className=" hover:bg-red-700 w-full text-right"
-            onClick={() => signOut({ callbackUrl: "/register" })}
-          >
-            Log Out
-          </Button>
-        </div>
+        <ProfileModal isChatSidebar={isChatSidebar} />
+
+        {!isAccountSidebar && (
+          <span className="h-12 w-12 rounded-full p-3 hover:bg-slate-700 flex justify-center items-center cursor-pointer">
+            <Columns2 size={iconSize} onClick={toggleChatSidebar} />
+          </span>
+        )}
       </div>
     </div>
   );

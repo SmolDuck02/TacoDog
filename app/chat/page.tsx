@@ -6,9 +6,8 @@ import ChatSidebar from "@/components/ui/chat-sidebar";
 import { askTacoDog, getActiveChatHistory, getAllUsers, TacoDog } from "@/lib/api";
 import { socket } from "@/lib/socketClient";
 import { Chat, ChatHistory, User } from "@/lib/types";
-import chatBanner from "@/public/bg/trees.jpg";
+import defaultBanner from "@/public/bg/defaultBG.avif";
 import { Label } from "@radix-ui/react-label";
-import axios from "axios";
 import { CircleEllipsis } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
@@ -24,8 +23,6 @@ export default function Home() {
     },
   });
 
-  const domain = "http://127.0.0.1:8000";
-  // const domain = "https://web-production-019a.up.railway.app";
   const [allUsers, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [chatUsersID, setChatUsers] = useState<string | null>();
@@ -36,12 +33,6 @@ export default function Home() {
   const [isSearch, setIsSearch] = useState(false);
   const [isAccountSidebar, setAccountSidebar] = useState(false);
 
-  const [privateChats, setPrivateChats] = useState<PrivateChat[]>([]);
-  // const [activeChatUser, setActiveChatUser] = useState<PrivateChat>({
-  //   user1: { id: "0", username: "" },
-  //   user2: { id: "0", username: "TacoDog" },
-  //   chats: [],
-  // });
   const [activeChatUser, setActiveChatUser] = useState<User | null>(null);
   const [activeChatHistory, setActiveChatHistory] = useState<ChatHistory[] | null>(null);
 
@@ -49,20 +40,6 @@ export default function Home() {
   const [messages, setMessages] = useState<Chat[]>([]);
   const [isSaveMessage, setIsSaveMessage] = useState(false);
 
-  // REPLACED WITH REQUIRE TRUE AND ONUNAUTHENTICATED
-  // useEffect(() => {
-  //   if (!session && status !== "loading") {
-  //     signIn();
-  //   } else if (session) {
-  //     setCurrentUser(session.user as User);
-  //   }
-  // }, [session, status]);
-
-  // UNCOMMENT AFTER TESTING
-  // useEffect(() => {
-  //   getUsers();
-  //   getPrivateChats();
-  // }, []);
   useEffect(() => {
     if (session) setCurrentUser(session.user as User);
   }, [session]);
@@ -116,231 +93,28 @@ export default function Home() {
     }
   };
 
-  const [isConnected, setIsConnected] = useState(false);
-  const [transport, setTransport] = useState("N/A");
   useEffect(() => {
-    if (socket.connected) {
-      onConnect();
-    }
+    if (socket === null) return;
 
-    function onConnect() {
-      setIsConnected(true);
-      setTransport(socket.io.engine.transport.name);
+    const handleConnect = () => console.log("Socket Connected");
+    const handleDisconnect = () => console.log("Socket Disconnected");
 
-      socket.io.engine.on("upgrade", (transport) => {
-        setTransport(transport.name);
-      });
-    }
-
-    function onDisconnect() {
-      setIsConnected(false);
-      setTransport("N/A");
-    }
-
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
 
     return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
     };
   }, []);
 
-  // const chatSocketRef = useRef<null | WebSocket>(null);
-
-  // useEffect(() => {
-  //   const chatSocket = new WebSocket("ws://127.0.0.1:8000/ws/chat/");
-  //   chatSocketRef.current = chatSocket;
-
-  //   chatSocket.onopen = function () {
-  //     console.log("Chat socket opened");
-  //   };
-
-  //   chatSocket.onclose = function (event) {
-  //     console.log("Chat socket closed", event);
-  //   };
-
-  //   chatSocket.onerror = function (error) {
-  //     console.error("Chat socket error", error);
-  //   };
-
-  //   chatSocket.onmessage = function (e) {
-  //     const data = JSON.parse(e.data);
-  //     const message = data;
-  //     console.log("Received message:", message);
-  //     // Handle incoming message
-  //   };
-
-  //   // Cleanup on component unmount
-  //   return () => {
-  //     chatSocket.close();
-  //   };
-  // }, []);
-
-  // --------
-
-  // chatSocket.onmessage = function (e) {
-  //   const data = JSON.parse(e.data);
-  //   const message = data["message"];
-  //   handleMessage(message); // Handle the received message
-  // };
-
-  // chatSocket.onclose = function (e) {
-  //   console.error("Chat socket closed unexpectedly");
-  // };
-
-  // // Function to handle incoming messages
-  // function handleMessage(message: string) {
-  //   console.log("Received message:", message);
-  //   // Add your logic to handle the message here
-  // }
-
-  // // Send message to server
-  // function sendMessage(message = "hello") {
-  //   if (chatSocketRef.current?.readyState == WebSocket.OPEN)
-  //     chatSocketRef.current.send(JSON.stringify({ user: currentUser, message: message }));
-  // }
-
-  async function addPrivateChat(chatId: number) {
-    const response = await axios.post(`${domain}/addPrivateChat/`, {
-      // UNCOMENT  AFTWEER TESTING
-      // userIds: [currentUser.id, activeChatUser.user2.id],
-      chatIds: [chatId],
-    });
-    if (response.data.error) {
-      console.log("Failed to save private chat: ", response.data.error);
-    } else {
-      console.log("Save private chat success", response);
-    }
-  }
-
-  async function saveMessage() {
-    // sendMessage();
-    const response = await axios.post(`${domain}/addChat/`, {
-      chat: messages[messages.length - 1]?.chat,
-      userId: messages[messages.length - 1]?.user.id,
-    });
-
-    if (response.data.error) {
-      console.log("Failed to save message: ", response.data.error);
-    } else {
-      console.log("Save message success", response);
-    }
-    //after save messagee create private chat
-    addPrivateChat(response.data.chatId);
-  }
-  // UNCOMMENT AFTER TESTING til askImage
-  // const onSendMessage = () => {
-  //   setIsSaveMessage(true);
-  //   setMessages([...messages, { chat: chatMessage, user: currentUser }]);
-  // };
-
-  // useEffect(() => {
-  //   if (chatMessage.startsWith("!")) askAI();
-  //   else if (chatMessage.startsWith("/")) askImage();
-  //   if (isSaveMessage) {
-  //     // save all messages
-  //     saveMessage();
-  //     setIsSaveMessage(false);
-  //   }
-
-  //   if (messages[messages.length - 1]?.user.username != "TacoDog") setChatMessage("");
-  // }, [isSaveMessage]);
-
-  // async function askAI() {
-  //   const response = await axios.post(`${domain}/ask/`, {
-  //     chatMessage: chatMessage.slice(1),
-  //   });
-
-  //   if (!response) {
-  //     throw new Error("Failed to fetch data");
-  //   }
-  //   setMessages([...messages, { chat: response.data.response, user: tacodog }]);
-  //   setIsSaveMessage(true);
-  //   console.log("ask ai", response.data);
-  // }
-
-  // async function askImage() {
-  //   const response = await axios.post(`${domain}/askImage/`, {
-  //     imagePrompt: chatMessage.slice(1),
-  //   });
-
-  //   if (!response) {
-  //     throw new Error("Failed to fetch data");
-  //   }
-
-  //   setMessages([...messages, { chat: response.data.imageResponse, user: tacodog }]);
-  //   setIsSaveMessage(true);
-  //   console.log("ask image", response.data);
-  // }
-
-  async function getUsers() {
-    try {
-      const response = await axios.get(`${domain}/getAllUsers/`);
-      const data: User[] = response.data.users.flat();
-      setUsers(data);
-
-      // init tacodog
-      const taco = data.filter((user) => user.username.toLowerCase() == "tacodog")[0];
-      setTacodog(taco);
-
-      // UNCOMENT  AFTWEER TESTING
-      //set default active chat
-      // setActiveChatUser({ user1: currentUser, user2: taco, chats: [] });
-    } catch (error) {
-      console.log("Error getting users:", error);
-    }
-  }
-
-  async function getPrivateChats() {
-    try {
-      const response = await axios.get(`${domain}/getPrivateChats/${currentUser?.id}/`);
-      const data: PrivateChat[] = response.data.private_chats.flat();
-      setPrivateChats(data);
-
-      // const privateChatsOnly = privateChats.map((chat) => chat.chats);
-      // console.log("Only", privateChatsOnly);
-      // const defaultChat = privateChats.find((chat) => new Date(chat.time) === user.username);
-      // setActiveChatUser({});
-      console.log("Private Chats", data);
-    } catch (error) {
-      console.log(error);
-    }
-  }
-  // UNCOMENT  AFTWEER TESTING
-  // useEffect(() => {
-  //   // get chats of activeChatUser users
-  //   const chatso = privateChats.filter(
-  //     (chat) =>
-  //       (chat.user1.id == activeChatUser.user1.id && chat.user2.id == activeChatUser.user2.id) ||
-  //       (chat.user2.id == activeChatUser.user1.id && chat.user1.id == activeChatUser.user2.id)
-  //   )[0];
-
-  //   // sort by date
-  //   if (chatso) {
-  //     chatso.chats.sort(
-  //       (a, b) => new Date(a.time ? a.time : 0).getTime() - new Date(b.time ? b.time : 0).getTime()
-  //     );
-  //     console.log("sorted?", chatso.chats);
-  //     setActiveChatUser((prevActive) => ({ ...prevActive, chats: chatso.chats }));
-  //   }
-  //   console.log("chats", chatso);
-  // }, [privateChats, activeChatUser]);
-
-  // UNCOMENT  AFTWEER TESTING
-  // useEffect(() => setMessages(activeChatUser.chats), [activeChatUser]);
-
-  // useEffect(() => {
-  //   const timer = setInterval(() => {
-  //     getPrivateChats(currentUser.id);
-  //   }, 3000);
-  //   return () => {
-  //     clearInterval(timer);
-  //   };
-  // }, [currentUser]);
   const messageContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (chatMessageRef.current && document.activeElement !== chatMessageRef.current) {
+      chatMessageRef.current.textContent = "Enter message...";
+      setChatMessage("");
+    }
     // Focus the div element when the component mounts
     if (messageContainerRef.current) {
       messageContainerRef.current.scrollTo({
@@ -350,52 +124,36 @@ export default function Home() {
     }
   }, [activeChatHistory]);
 
+  const handleFocus = () => {
+    if (chatMessageRef.current && !chatMessage) {
+      chatMessageRef.current.textContent = "";
+      setChatMessage("");
+    }
+  };
+  const handleBlur = () => {
+    if (chatMessageRef.current && !chatMessage) {
+      chatMessageRef.current.textContent = "Enter message..."; // Reset placeholder on blur if empty
+    }
+  };
   function toggleAccountSidebar() {
     setAccountSidebar(!isAccountSidebar);
   }
 
   return (
-    <div className={`${status === "loading" ? "hidden" : "flex"} h-screen w-screen flex`}>
+    <div
+      className={`${
+        status === "loading" ? "hidden" : "flex"
+      } overflow-hidden h-screen w-screen flex`}
+    >
       <ChatSidebar allUsers={allUsers} handleSetActiveChat={handleSetActiveChat} />
-      <div className=" bg-orange-300 overflow-hidden min-h-screen w-full flex flex-col">
-        {/* <div
-          className={`bg-black h-full ${isAccountSidebar ? " w-[20%]" : "w-[40px]"} fixed right-0`}
-        >
-          <div className="border-b border-gray-400 w-full h-16 items-end text-4xl  relative">
-            <Image
-              className="hidden xl:flex "
-              src={"/bg/BG1.jpg"}
-              alt="User BG"
-              fill={true}
-              objectFit="cover"
-            />
-          </div>
-          <div className="py-4 px-5 flex justify-between items-center ">
-            <div className="flex gap-4">
-              <Avatar onClick={toggleAccountSidebar} className="h-9 w-9 cursor-pointer ">
-                <AvatarImage src="https://github.com/shadcn.png" />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col text-lg">
-                Account
-                <span className="text-xs text-muted-foreground">
-                  {currentUser?.username ? currentUser.username : "Guest"}
-                </span>
-              </div>
-            </div>
-            <Minimize size={22} onClick={toggleAccountSidebar} className="cursor-pointer" />
-          </div>
-        </div> */}
-
-        {/* <div className="flex flex-col border-x "> */}
-        <div className="relative border-b w-full min-h-24 flex items-center justify-center text-center text-xs ">
-          {/* AI Chat Assistant - CSIT349 Final Project <br /> (Ask TacoDog anything with a
-            &quot;!&quot; prefix) */}
-          <Image fill src={chatBanner} objectFit="cover" alt="user banner" />
+      <div className=" h-full w-full flex flex-col  ">
+        <div className="relative border-b w-full h-[7rem] flex items-center justify-center text-center text-xs ">
+          <Image fill src={defaultBanner} className=" object-cover" alt="user banner" />
         </div>
+
         {activeChatUser ? (
-          <div className="bg-blue-300 h-[90%]   w-[60%] mx-auto flex flex-col relative  ">
-            <div className="  p-5 z-50 absolute w-full backdrop-blur-md">
+          <div className=" w-[60%] h-fit mx-auto flex flex-col relative  ">
+            <div className="  p-5 py-7 z-50 absolute w-full border-b backdrop-blur-md">
               <div className="flex justify-between items-center">
                 <div className="flex gap-5 items-center">
                   <Avatar className="h-9 w-9 cursor-pointer">
@@ -410,41 +168,44 @@ export default function Home() {
                 </div>
               </div>
             </div>
+
             <div
               // ref="messages-container"
               ref={messageContainerRef}
-              className="bg-slate-700 flex-1 pb-8 p-12 flex gap-5 scrollbar scroll-smooth flex-col overflow-y-scroll"
+              className=" pb-8  p-12 flex gap-5 scrollbar scroll-smooth flex-col overflow-y-scroll"
             >
-              <div className="min-h-8"></div>
-              {activeChatHistory && currentUser && activeChatUser ? (
-                activeChatHistory.map((message, index) => {
-                  const isAuthor = message.senderID == currentUser.id;
-                  const author: User =
-                    message.senderID == "TacoDog"
-                      ? TacoDog
-                      : isAuthor
-                      ? currentUser
-                      : activeChatUser;
-                  return (
-                    <div
-                      id={index.toString()}
-                      key={index}
-                      className={`flex   w-fit gap-4 ${isAuthor && "self-end"} items-end`}
-                    >
-                      {!isAuthor && (
-                        <Avatar className="mb-1 z-0">
-                          <AvatarImage src={"/avatars/tacodog.png"} />
-                          <AvatarFallback>{author.username[0]}</AvatarFallback>
-                        </Avatar>
-                      )}
-                      <div className={`${isAuthor ? "items-end" : "items-start"} flex flex-col `}>
-                        <Label
-                          htmlFor={index.toString()}
-                          className="px-2 flex justify-start text-xs text-slate-500"
-                        >
-                          {author.username}
-                        </Label>
-                        {/* {message && message.chat.toLowerCase().startsWith("https") ? (
+              {/* empty div */}
+              <div className="min-h-8 "></div>
+              <div className="h-[26.5rem] flex flex-col gap-5 ">
+                {activeChatHistory && currentUser && activeChatUser ? (
+                  activeChatHistory.map((message, index) => {
+                    const isAuthor = message.senderID == currentUser.id;
+                    const author: User =
+                      message.senderID == "TacoDog"
+                        ? TacoDog
+                        : isAuthor
+                        ? currentUser
+                        : activeChatUser;
+                    return (
+                      <div
+                        id={index.toString()}
+                        key={index}
+                        className={`flex  w-fit gap-4 ${isAuthor && "self-end"} items-end`}
+                      >
+                        {!isAuthor && (
+                          <Avatar className="mb-1 z-0">
+                            <AvatarImage src={"/avatars/tacodog.png"} />
+                            <AvatarFallback>{author.username[0]}</AvatarFallback>
+                          </Avatar>
+                        )}
+                        <div className={`${isAuthor ? "items-end" : "items-start"} flex flex-col `}>
+                          <Label
+                            htmlFor={index.toString()}
+                            className="px-2 flex justify-start text-xs text-slate-500"
+                          >
+                            {author.username}
+                          </Label>
+                          {/* {message && message.chat.toLowerCase().startsWith("https") ? (
                     <Image
                       src={message.chat}
                       alt="image generated response"
@@ -453,43 +214,50 @@ export default function Home() {
                       height={200}
                     />
                   ) : ( */}
-                        <CardContent
-                          id={index.toString()}
-                          key={index}
-                          className="border p-3 flex items-start  text-left w-auto rounded-lg"
-                        >
-                          {message.chatMessage}
-                        </CardContent>
-                        {/* )} */}
+                          <CardContent
+                            id={index.toString()}
+                            key={index}
+                            className="border p-3 flex items-start  text-left w-auto rounded-lg"
+                          >
+                            {message.chatMessage}
+                          </CardContent>
+                          {/* )} */}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <CardDescription className="h-full bg-black w-full text-center flex text-lg flex-col justify-center items-center">
-                  <span className="text-3xl leading-none">Start a Convo</span>with TacoDog
-                  <span className="text-sm text-[#3b4f72] ">
-                    &quot;!&quot; prefix for text-based results! <br />
-                    &quot;/&quot; prefix for image-based results!
-                    <br />
-                    Warf!
-                  </span>
-                </CardDescription>
-              )}
+                    );
+                  })
+                ) : (
+                  <CardDescription className="h-full bg-black w-full text-center flex text-lg flex-col justify-center items-center">
+                    <span className="text-3xl leading-none">Start a Convo</span>with TacoDog
+                    <span className="text-sm text-[#3b4f72] ">
+                      &quot;!&quot; prefix for text-based results! <br />
+                      &quot;/&quot; prefix for image-based results!
+                      <br />
+                      Warf!
+                    </span>
+                  </CardDescription>
+                )}
+              </div>
             </div>
+            <div className=" bottom-[3.1rem] h-4  absolute w-full border-t backdrop-blur-xl brightness-75"></div>
             {/* <MessagesCard
               messages={activeChatHistory}
               chatUsers={{ currentUser: currentUser, chatMate: activeChatUser }}
             /> */}
-            <div className="max-h-60 overflow-x-hidden mt-2 mb-16 flex gap-2 w-[95%] mx-auto ">
+            <div className=" overflow-hidden z-10 flex gap-2 w-[95%] px-5  mx-auto ">
               <span
                 ref={chatMessageRef}
+                onFocus={() => handleFocus()}
+                onBlur={() => handleBlur()}
                 onInput={(e) => setChatMessage((e.target as HTMLElement).textContent)}
                 contentEditable
-                className="bg-yellow-800 p-4 rounded-lg   w-full textarea"
+                className={`${
+                  chatMessage ? "text-white" : "text-slate-500"
+                } max-h-48 px-4  overflow-y-auto no-scrollbar py-3 rounded border-2   w-full textarea`}
                 role="textbox"
                 onKeyDown={handleSendMessage}
               ></span>
+
               {/* <Textarea
                   placeholder="Type your message here."
                   onChange={(e) => setChatMessage(e.target.value)}
@@ -504,12 +272,16 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-[8rem]">Helllow!</div>
+          <div className="w-full  flex-1 flex items-center text-[8rem] justify-center ">
+            Helllow!
+          </div>
         )}
       </div>
+
       {/* </div> */}
     </div>
   );
+  <div className=" bg-orange-300 overflow-hidden   flex flex-col"></div>;
   //   return (
   //     <main className="flex h-screen overflow-hidden  min-w-screen">
   //       <div className="w-[15%] h-screen flex flex-col">

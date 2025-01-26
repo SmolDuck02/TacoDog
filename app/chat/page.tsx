@@ -102,7 +102,7 @@ export default function Home() {
       if (receiverID == currentUser?.id) {
         handleSetActiveChat(callerID);
         setShowCamera(true);
-        initializeCamera();
+        if(videoRef.current) initializeCamera(videoRef.current);
       } else if (callerID == currentUser?.id) {
         setIsVideoCallRinging(false);
       }
@@ -130,7 +130,7 @@ export default function Home() {
 
       const chatHistory = {
         chatUsersID: chatUsersID,
-        newChatMessage: { senderID: currentUser.id, chatMessage: chatMessage },
+        newChatMessage: { senderID: currentUser.id, chatMessage: chatMessage, time: new Date() },
         activeChatHistory: activeChatHistory || [],
       };
 
@@ -251,7 +251,7 @@ export default function Home() {
   const handleVideoCall = async () => {
     setIsVideoCallRinging(true);
     setShowCamera(true);
-    initializeCamera();
+    if (videoRef.current) initializeCamera(videoRef.current);
     console.log(chatUsersID);
     socket.emit("call", {
       caller: currentUser,
@@ -312,7 +312,7 @@ export default function Home() {
     }
   }
 
-  async function initializeCamera() {
+  async function initializeCamera(videoRef: HTMLVideoElement) {
     try {
       // Get all available video input devices (cameras)
       const cameras = await getConnectedDevices("videoinput");
@@ -325,9 +325,9 @@ export default function Home() {
       const stream = await openCamera(cameras[0].deviceId, 1280, 720);
 
       // Play the stream in a video element
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
+      if (videoRef) {
+        videoRef.srcObject = stream;
+        videoRef.play();
       } else {
         console.warn("No video element found.");
       }

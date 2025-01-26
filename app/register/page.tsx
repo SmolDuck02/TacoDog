@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ThemeModeButton from "@/components/ui/theme-mode-button";
 import type { User } from "@/lib/types";
+import { iconSizeSmall } from "@/lib/utils";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 import Image from "next/image";
@@ -122,7 +123,7 @@ export default function Home() {
   return (
     <main
       className={`${
-        status !== "loading" && !session?.user ? "flex" : "hidden"
+        status !== "loading" && !session?.user ? "flex " : "hidden"
       } h-screen min-w-screen justify-center items-center gap-10 overflow-hidden`}
     >
       <div className="z-10  max-h-screen overflow-hidden flex flex-col items-end justify-center w-full absolute">
@@ -190,7 +191,7 @@ export default function Home() {
                     className="absolute text-slate-500 right-4 cursor-pointer"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? <EyeOff size={iconSizeSmall} /> : <Eye size={iconSizeSmall  } />}
                   </div>
                 </div>
                 {mode == "Sign Up" && (
@@ -210,7 +211,11 @@ export default function Home() {
                       className="absolute text-slate-500 right-4 cursor-pointer"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      {showPassword ? (
+                        <EyeOff size={iconSizeSmall} />
+                      ) : (
+                        <Eye size={iconSizeSmall} />
+                      )}
                     </div>
                   </div>
                 )}

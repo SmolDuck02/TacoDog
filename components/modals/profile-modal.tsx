@@ -1,28 +1,21 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { User } from "@/lib/types";
 import defaultAvatar from "@/public/avatars/defaultAvatar.png";
 import defaultBanner from "@/public/bg/defaultBG.avif";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
-import { useState } from "react";
+import { DialogFooter, DialogHeader } from "../ui/dialog";
 import EditProfileModal from "./edit-profile-modal";
 
 export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
   const { data: session } = useSession();
   const user = session?.user as User;
-  const [isAccountSidebar, setAccountSidebar] = useState(false);
-
+  
   return (
-    <Dialog>
-      <DialogTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         {/* profile header */}
         <div
           className={`  rounded p-2 flex gap-4   ${
@@ -30,19 +23,19 @@ export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
           } items-center  w-full cursor-pointer `}
         >
           <Avatar className="h-9 w-9 ">
-            <AvatarImage src="https://github.com/shadcn.png" />
-            <AvatarFallback>U</AvatarFallback>
+            <AvatarImage src={user?.avatar?.img.src || defaultAvatar.src} />
+            <AvatarFallback>{user?.username[0]}</AvatarFallback>
           </Avatar>
-          <span className={` ${isChatSidebar ? "flex" : "hidden"} `}>{user?.username}</span>
+          <span className={` ${isChatSidebar ? "flex" : "hidden"} font-bold`}>{user?.username}</span>
         </div>
-      </DialogTrigger>
-      <DialogContent className={` left-44 top-[34rem] p-0 w-[20rem] sm:max-w-[425px]`}>
+      </PopoverTrigger>
+      <PopoverContent className={` p-0 w-[20rem] sm:max-w-[425px]`}>
         {/* profile menu component */}
 
         <DialogHeader>
           <div className={` relative border-b border-gray-400  w-full h-16  text-4xl `}>
             <Image
-              src={user?.banner || defaultBanner.src}
+              src={user?.banner?.img || defaultBanner.src}
               alt="User Banner"
               fill={true}
               style={{
@@ -59,7 +52,7 @@ export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
           >
             <div className={` border-b p-3 flex gap-4  justify-start items-center w-full `}>
               <Avatar className="h-10 w-10">
-                <AvatarImage src={user?.avatar || defaultAvatar.src} />
+                <AvatarImage src={user?.avatar?.img.src || defaultAvatar.src} />
                 <AvatarFallback>U</AvatarFallback>
               </Avatar>
 
@@ -84,13 +77,13 @@ export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
             <div className={`  w-full  px-6 text-sm flex flex-col`}>
               <div className="flex w-full justify-between">
                 Avatar
-                <p>Morty</p>
+                <p>{user?.avatar?.name}</p>
               </div>
             </div>
             <div className={`  w-full  px-6 text-sm flex flex-col`}>
               <div className="flex w-full justify-between">
                 Banner
-                <p>Moss</p>
+                <p>{user?.banner?.name}</p>
               </div>
             </div>
           </div>
@@ -107,8 +100,8 @@ export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
             </div>
           </DialogFooter>
         </DialogHeader>
-      </DialogContent>
-    </Dialog>
+      </PopoverContent>
+    </Popover>
   );
 }
 

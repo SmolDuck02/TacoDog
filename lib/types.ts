@@ -1,9 +1,11 @@
 import type { User as NextAuthUser } from "next-auth";
+import { StaticImageData } from "next/image";
 export interface User extends NextAuthUser {
   username: string;
   password?: string;
+  banner?: { img: StaticImageData; name: string; source: string };
+  avatar?: { img: StaticImageData; name: string };
 }
-
 export interface Chat {
   chat: string;
   user: User;

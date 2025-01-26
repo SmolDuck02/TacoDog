@@ -1,31 +1,17 @@
 import { Redis } from "@upstash/redis";
-import { ResponseObject, User } from "../types";
+import { User } from "../types";
 
-const backendURL = "https://web-production-019a.up.railway.app";
 export const TacoDog = { id: "0", username: "TacoDog" };
-
-export async function askMe(userMessage: string): Promise<ResponseObject> {
-  console.log("AskMe user message: ", userMessage);
-  const response = await fetch(`${backendURL}/ask`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ userMessage }),
-  });
-
-  if (!response.ok) {
-    return { response: "error" };
-  }
-
-  const data: ResponseObject = await response.json();
-  return data;
-}
 
 export const redis = new Redis({
   url: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_URL,
   token: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN,
 });
+
+export async function saveProfileChanges(user: User) {
+  const updatedUser = await redis.set(`user:${user.username}`, user);
+  console.log(updatedUser);
+}
 
 export async function getAllUsers() {
   try {
@@ -35,10 +21,13 @@ export async function getAllUsers() {
       console.log("No records found");
       return [];
     }
+
     const values: User[] = await redis.mget(...keys);
-    const records = keys.map((key, index) => ({
+    const records = keys.map((_, index) => ({
       id: values[index].id,
       username: values[index].username,
+      avatar: values[index].avatar,
+      banner: values[index].banner,
     }));
 
     return records;
@@ -63,7 +52,7 @@ const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_KEY);
 const model = genAI.getGenerativeModel({
   model: "gemini-1.5-flash",
   systemInstruction:
-    "You are an social person named TacoDog. You are to help and guide the users of their queries. Just use plain text, no characters that make text bold or italic, just plain text",
+    "You are an social person named TacoDog but users call you 't' or '@t'. You are to help and guide the users of their queries. Just use plain text, no characters that make text bold or italic, just plain text",
 });
 
 export async function askTacoDog(prompt: string) {
@@ -79,7 +68,7 @@ export async function askTacoDog(prompt: string) {
       },
     ],
   });
+
   const result = await chat.sendMessage(prompt.slice(1));
   return { senderID: "TacoDog", chatMessage: result.response.text() };
 }
-

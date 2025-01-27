@@ -1,28 +1,97 @@
-import { Redis } from "@upstash/redis";
-import { User } from "../types";
-
-export const TacoDog = { id: "0", username: "TacoDog" };
-
-export const redis = new Redis({
-  url: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_URL,
-  token: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN,
-});
-
+"use server";
+// import ava from "@/public/avatars/tacodog.png";
+// import bg from "@/public/bg/tacodog.jpg";
+import { ChatHistory, User } from "../types";
+import { avatars, banners, redis } from "../utils";
+const bcrypt = require("bcrypt");
 export async function saveProfileChanges(user: User) {
   const updatedUser = await redis.set(`user:${user.username}`, user);
   console.log(updatedUser);
 }
 
+export async function registerUser(formData: User) {
+  // const u = await redis.keys(`user*`);
+  // if (u.length > 0) await redis.del(...u);
+  // const x = await redis.keys(`chat*`);
+  // if (x.length > 0) await redis.del(...x);
+
+  const { username, password } = formData;
+  const hashedPassword = await bcrypt.hash(password || "", 10);
+
+  const users = await redis.keys(`user:*`);
+  let user;
+
+  if (users.length > 0) {
+    const values: User[] = await redis.mget(...users);
+    user = values.find((value) => {
+      return value.username === username;
+    });
+  }
+
+  console.log(formData, users, user);
+
+  if (user) {
+    console.log("Username already taken!", user.username);
+    throw Error("Username already taken!");
+  }
+
+  const id = await redis.incr("userCounter:id");
+  await redis.set(`user:${id}`, {
+    id,
+    username,
+    password: hashedPassword,
+    avatar: avatars[id % avatars.length],
+    banner: banners[id % banners.length],
+  });
+
+  // await redis.set(`user:${1}`, {
+  //   id: 1,
+  //   username: "TacoDog",
+  //   password: hashedPassword,
+  //   avatar: { img: ava, name: "Taco" },
+  //   banner: { img: bg, name: "Cacto", source: "Ingmar H" },
+  // });
+
+  const keys = await redis.keys("chatHistory:*");
+  const s = await redis.keys("user:*");
+  console.log("fe", keys, s);
+
+  return { success: "Registration successful" };
+}
+
+export async function getUserChats(id: string) {
+  try {
+    const pattern = `_${id}_`;
+    const keys = await redis.keys(`chatHistory*${pattern}*`);
+
+    if (!keys || keys.length === 0) {
+      console.log("No user chats found");
+      return null;
+    }
+
+    const userIDs = keys.map((k) => {
+      return k.split("_").find((i) => !isNaN(Number(i)) && i != id);
+    });
+
+    const userChats: User[] = (await Promise.all(
+      userIDs.map((id) => redis.get(`user:${id}`))
+    )) as User[];
+
+    console.log("user chats: ", userIDs, userChats, keys);
+
+    return userChats;
+  } catch (error) {
+    console.error("error fetching user chats ", error);
+    return null;
+  }
+}
+
 export async function getAllUsers() {
   try {
     const keys = await redis.keys("user:*");
-
-    if (keys.length === 0) {
-      console.log("No records found");
-      return [];
-    }
-
     const values: User[] = await redis.mget(...keys);
+    if (!values) return null;
+
     const records = keys.map((_, index) => ({
       id: values[index].id,
       username: values[index].username,
@@ -30,20 +99,21 @@ export async function getAllUsers() {
       banner: values[index].banner,
     }));
 
+    console.log("all users fetched successful");
     return records;
   } catch (error) {
-    console.error("Error fetching all records:", error);
-    return [];
+    console.error("Error fetching all users:", error);
+    return null;
   }
 }
 
 export async function getActiveChatHistory(chatUsers: string) {
   try {
-    const chatHistory = await redis.get(`chatHistory:${chatUsers}`);
+    const chatHistory = (await redis.get(`chatHistory:${chatUsers}`)) as ChatHistory[];
     return chatHistory;
   } catch (error) {
     console.error(`Error fetching chat history with ${chatUsers}`, error);
-    return [];
+    return null;
   }
 }
 
@@ -52,7 +122,7 @@ const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_KEY);
 const model = genAI.getGenerativeModel({
   model: "gemini-1.5-flash",
   systemInstruction:
-    "You are an social person named TacoDog but users call you 't' or '@t'. You are to help and guide the users of their queries. Just use plain text, no characters that make text bold or italic, just plain text",
+    "You are an social person named TacoDog but users call you 't' or '@t' or '@tacodog'. You are to help and guide the users of their queries. Just use plain text, no characters that make text bold or italic, just plain text",
 });
 
 export async function askTacoDog(prompt: string) {

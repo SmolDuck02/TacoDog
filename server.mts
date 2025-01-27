@@ -21,6 +21,7 @@ app.prepare().then(() => {
 
   io.on("connection", async (socket) => {
     // await redis.del(`chatHistory:116`);
+
     console.log(`A user connected: ${socket.id}`);
 
     socket.on("sendChat", async (data) => {
@@ -32,7 +33,7 @@ app.prepare().then(() => {
 
       activeChatHistory.push(newChatMessage);
 
-      // await redis.set(`chatHistory:${chatUsersID}`, activeChatHistory);
+      await redis.set(`chatHistory:${chatUsersID}`, activeChatHistory);
       console.log(activeChatHistory, `Successfully pushed new chat to history`);
     });
 

@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import ChatSidebar from "@/components/ui/chat-sidebar";
 import { Input } from "@/components/ui/input";
-import { askTacoDog, getActiveChatHistory, getAllUsers, TacoDog } from "@/lib/api";
+import { askTacoDog, getActiveChatHistory, getAllUsers, getUserChats } from "@/lib/api";
 import { socket } from "@/lib/socketClient";
 import { Chat, ChatHistory, User } from "@/lib/types";
+import { TacoDog } from "@/lib/utils";
 import defaultBanner from "@/public/bg/defaultBG.avif";
 import { Label } from "@radix-ui/react-label";
-import { CircleEllipsis, Loader, Video, VideoOff } from "lucide-react";
+import { CircleEllipsis, Loader, Loader2, Video, VideoOff } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -27,6 +28,7 @@ export default function Home() {
 
   const [allUsers, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [userChats, setUserChats] = useState<User[] | null>(null);
   const [chatUsersID, setChatUsersID] = useState<string | null>();
   const chatMessageRef = useRef<HTMLSpanElement>(null);
 
@@ -47,43 +49,60 @@ export default function Home() {
   }, [session]);
 
   useEffect(() => {
-    getAllUsers().then((allUsers) => {
-      setUsers(allUsers);
-      setFilteredUsers(allUsers);
-      setActiveChatUser(allUsers?.filter((user) => user?.username === "TacoDog")[0] as User);
-    });
-  }, []);
+    if (session) {
+      const id = (session.user as User).id;
+      getAllUsers()
+        .then((response) => {
+          if (response) {
+            setUsers(response);
+            setFilteredUsers(response);
+            setActiveChatUser(response.find((user) => user.id == "0") as User);
+          }
+        })
+        .catch((error) => console.log("error fetching all users: ", error));
+
+      getActiveChatHistory(`_0_${id}_`)
+        .then((response) => {
+          if (response) setActiveChatHistory(response);
+        })
+        .catch((error) => console.log("error getting active chat history: ", error));
+
+      getUserChats(id)
+        .then((response) => {
+          if (response) setUserChats(response);
+        })
+        .catch((error) => console.log("Error getting user chats: ", error));
+    }
+  }, [session]);
 
   const [isNewChat, setIsNewChat] = useState(false);
 
   const handleNewChat = useCallback(() => {
     setShowSearchModalMini(false);
-    setActiveChatUser({ username: "" } as User);
+    // setActiveChatUser({ username: "" } as User);
     setIsNewChat(true);
   }, []);
 
   const handleNewChatClose = () => {
     setActiveChatUser(allUsers?.filter((user) => user?.username === "TacoDog")[0] as User);
     setIsNewChat(false);
+    setShowSearchModal(false);
   };
 
-  const handleSetActiveChat = useCallback(
-    (id: string) => {
-      if (currentUser) {
-        const IDs = [id, currentUser.id].sort().join("");
+  const handleSetActiveChat = (id: string) => {
+    if (currentUser) {
+      const IDs = `_${[id, currentUser.id].sort().join("_")}_`;
 
-        setIsNewChat(false);
-        setShowSearchModal(false);
-        setChatUsersID(IDs);
+      setChatUsersID(IDs);
+      setIsNewChat(false);
+      setShowSearchModal(false);
 
-        getActiveChatHistory(IDs).then((chatHistory) => {
-          setActiveChatHistory(chatHistory as ChatHistory[]);
-          setActiveChatUser(allUsers.filter((user) => user.id === id)[0]);
-        });
-      }
-    },
-    [allUsers, currentUser]
-  );
+      getActiveChatHistory(IDs).then((chatHistory) => {
+        setActiveChatHistory(chatHistory as ChatHistory[]);
+        setActiveChatUser(allUsers.find((user) => user.id === id) || null);
+      });
+    }
+  };
 
   const [incomingCall, setIncomingCall] = useState<User | null>(null);
   useEffect(() => {
@@ -102,7 +121,7 @@ export default function Home() {
       if (receiverID == currentUser?.id) {
         handleSetActiveChat(callerID);
         setShowCamera(true);
-        if(videoRef.current) initializeCamera(videoRef.current);
+        if (videoRef.current) initializeCamera(videoRef.current);
       } else if (callerID == currentUser?.id) {
         setIsVideoCallRinging(false);
       }
@@ -193,9 +212,18 @@ export default function Home() {
   const messageContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (activeChatHistory) {
+      setTimeout(() => {
+        if (helloRef?.current) {
+          helloRef.current.classList.add("opacity-0", "-translate-y-10");
+          setIsLoading(false);
+        }
+      }, 1000);
+    }
+
     if (chatMessageRef.current && document.activeElement !== chatMessageRef.current) {
-      chatMessageRef.current.textContent = "Enter message...";
       setChatMessage("");
+      chatMessageRef.current.textContent = "Enter message...";
     }
 
     if (messageContainerRef.current) {
@@ -222,6 +250,9 @@ export default function Home() {
   function toggleAccountSidebar() {
     setAccountSidebar(!isAccountSidebar);
   }
+
+  const [isLoading, setIsLoading] = useState(true);
+  const helloRef = useRef<HTMLDivElement | null>(null);
 
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showSearchModalMini, setShowSearchModalMini] = useState(false);
@@ -337,15 +368,13 @@ export default function Home() {
   }
 
   return (
-    <div
-      className={`${
-        activeChatUser ? "flex" : "hidden"
-      } text-slate-300 overflow-hidden h-screen w-screen `}
-    >
+    <div className={`${activeChatUser ? "flex" : "hidden"}  overflow-hidden h-screen w-screen `}>
       <ChatSidebar
-        allUsers={allUsers}
+        userChats={userChats as User[]}
+        activeChatUserID={activeChatUser?.id as string}
         handleSetActiveChat={handleSetActiveChat}
         handleNewChat={handleNewChat}
+        handleNewChatClose={handleNewChatClose}
         handleSearchModalMini={handleSearchModalMini}
       />
 
@@ -358,6 +387,7 @@ export default function Home() {
             document.activeElement?.id !== "searchModal"
           ) {
             setShowSearchModal(false);
+            setShowSearchModalMini(false);
           }
         }}
       >
@@ -437,176 +467,188 @@ export default function Home() {
           </div>
         </div>
 
-        {activeChatUser ? (
-          <div className=" w-[60%] h-full mx-auto flex flex-col relative  ">
-            {/* chat header */}
-            <div className="  p-5 h-[6.5rem] py-7 z-50 absolute w-full border-b backdrop-blur-md">
-              {isNewChat ? (
-                <div className="flex gap-3">
-                  <Button
-                    onClick={handleNewChatClose}
-                    className=" select-none"
-                    variant={"secondary"}
-                  >
-                    X
-                  </Button>
-                  <Input
-                    ref={searchRef}
-                    onFocus={() => setShowSearchModal(true)}
-                    placeholder="Search people..."
-                    className="select-none p-5"
-                    value={searchText}
-                    onChange={(e) => {
-                      setSearchText(e.target.value);
-                      setFilteredUsers(
-                        allUsers.filter((user) =>
-                          user.username.toLowerCase().includes(e.target.value)
-                        )
-                      );
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="flex justify-between items-center">
-                  <div className="flex gap-5 items-center">
-                    <Avatar className="h-10 w-10 cursor-pointer">
-                      <AvatarImage
-                        src={activeChatUser?.avatar?.img.src}
-                        className=" cursor-default"
-                      />
-                      <AvatarFallback>{activeChatUser?.username[0] || ""}</AvatarFallback>
-                    </Avatar>
-                    <CardTitle className="text-3xl">{activeChatUser?.username || ""}</CardTitle>
-                  </div>
-                  <div className="flex gap-4 items-center">
-                    {isVideoCallRinging && (
-                      <>
-                        Ringing <Loader className="animate-spin " />
-                      </>
-                    )}
-                    {activeChatUser.username !== "TacoDog" &&
-                      (showCamera ? (
-                        <VideoOff
-                          onClick={handleVideoCallEnd}
-                          size={iconSize}
-                          className="cursor-pointer"
-                        />
-                      ) : (
-                        <Video
-                          onClick={handleVideoCall}
-                          size={iconSize}
-                          className="cursor-pointer"
-                        />
-                      ))}
-                    <CircleEllipsis size={iconSize} className="cursor-pointer" />
-                    {/* <Account username={user.username} setUser={setUser} /> */}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div
-              ref={messageContainerRef}
-              className=" flex pb-0 p-5 gap-5 h-full items-center justify-end scrollbar scroll-smooth flex-col overflow-y-scroll"
-            >
-              {/* camera */}
-              {showCamera ? (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  controls={false}
-                  className="z-[100] h-4/5 mb-5  aspect-video relative "
-                />
-              ) : (
-                <div className="h-[32rem] w-full flex flex-col gap-5  ">
-                  {activeChatHistory && currentUser && activeChatUser ? (
-                    <>
-                      {/* empty div */}
-                      <div className="min-h-[5rem] "></div>
-
-                      {/* chat messages */}
-                      {activeChatHistory.map((message, index) => {
-                        const isAuthor = message.senderID == currentUser.id;
-                        const author: User =
-                          message.senderID == "TacoDog"
-                            ? TacoDog
-                            : isAuthor
-                            ? currentUser
-                            : activeChatUser;
-                        return (
-                          <div
-                            id={index.toString()}
-                            key={index}
-                            className={`flex  w-fit gap-4 ${isAuthor && "self-end"} items-end`}
-                          >
-                            {!isAuthor && (
-                              <Avatar className="mb-1 z-0">
-                                <AvatarImage src={"/avatars/tacodog.png"} />
-                                <AvatarFallback>{author.username[0]}</AvatarFallback>
-                              </Avatar>
-                            )}
-                            <div
-                              className={`${isAuthor ? "items-end" : "items-start"} flex flex-col `}
-                            >
-                              <Label
-                                htmlFor={index.toString()}
-                                className="px-2 flex justify-start text-xs text-slate-500"
-                              >
-                                {author.username}
-                              </Label>
-
-                              <CardContent
-                                id={index.toString()}
-                                key={index}
-                                className="border p-3 flex items-start  text-left w-auto rounded-lg"
-                              >
-                                {message.chatMessage}
-                              </CardContent>
-                              {/* )} */}
-                            </div>
-                          </div>
+        <div className=" w-[60%] h-full mx-auto flex flex-col relative  ">
+          <div
+            ref={helloRef}
+            className="duration-500 ease-out flex-col w-full h-full flex items-center text-[8rem] justify-center absolute z-[100]"
+          >
+            Hellow!
+            <Loader2 className="animate-spin" />
+          </div>
+          {!isLoading && (
+            <>
+              {/* chat header */}
+              <div className="  p-5 h-[6.5rem] py-7 z-50 absolute w-full border-b backdrop-blur-md">
+                {isNewChat ? (
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleNewChatClose}
+                      className=" select-none"
+                      variant={"secondary"}
+                    >
+                      X
+                    </Button>
+                    <Input
+                      ref={searchRef}
+                      onFocus={() => setShowSearchModal(true)}
+                      placeholder="Search people..."
+                      className="select-none p-5"
+                      value={searchText}
+                      onChange={(e) => {
+                        setSearchText(e.target.value);
+                        setFilteredUsers(
+                          allUsers.filter((user) =>
+                            user.username.toLowerCase().includes(e.target.value)
+                          )
                         );
-                      })}
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-5 items-center">
+                      <Avatar className="h-10 w-10 cursor-pointer">
+                        <AvatarImage
+                          src={activeChatUser?.avatar?.img.src}
+                          className=" cursor-default"
+                        />
+                        <AvatarFallback>{activeChatUser?.username[0] || ""}</AvatarFallback>
+                      </Avatar>
+                      <CardTitle className="text-3xl">{activeChatUser?.username || ""}</CardTitle>
+                    </div>
+                    <div className="flex gap-4 items-center">
+                      {isVideoCallRinging && (
+                        <>
+                          Ringing <Loader className="animate-spin " />
+                        </>
+                      )}
+                      {activeChatUser &&
+                        activeChatUser.username !== "TacoDog" &&
+                        (showCamera ? (
+                          <VideoOff
+                            onClick={handleVideoCallEnd}
+                            size={iconSize}
+                            className="cursor-pointer"
+                          />
+                        ) : (
+                          <Video
+                            onClick={handleVideoCall}
+                            size={iconSize}
+                            className="cursor-pointer"
+                          />
+                        ))}
+                      <CircleEllipsis size={iconSize} className="cursor-pointer" />
+                      {/* <Account username={user.username} setUser={setUser} /> */}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div
+                ref={messageContainerRef}
+                className=" flex pb-0 p-5 gap-5 h-full items-center justify-end scrollbar scroll-smooth flex-col overflow-y-scroll"
+              >
+                {/* camera */}
+                {showCamera ? (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    controls={false}
+                    className="z-[100] h-4/5 mb-5  aspect-video relative "
+                  />
+                ) : (
+                  <div className="h-[32rem] w-full flex flex-col gap-5  ">
+                    {activeChatHistory && currentUser && activeChatUser ? (
+                      <>
+                        {/* empty div */}
+                        <div className="min-h-[5rem] "></div>
 
-                      {/* empty div */}
-                      <div className="min-h-3 "></div>
-                    </>
-                  ) : (
-                    <CardDescription className="h-full bg-black w-full text-center flex text-lg flex-col justify-center items-center">
-                      <span className="text-3xl leading-none">Start a Convo</span>with TacoDog
-                      <span className="text-sm text-[#3b4f72] ">
-                        &quot;!&quot; prefix for text-based results! <br />
-                        &quot;/&quot; prefix for image-based results!
-                        <br />
-                        Warf!
-                      </span>
-                    </CardDescription>
-                  )}
-                </div>
-              )}
-            </div>
+                        {/* chat messages */}
+                        {activeChatHistory.map((message, index) => {
+                          const isAuthor = message.senderID == currentUser.id;
+                          const author: User =
+                            message.senderID == "TacoDog"
+                              ? TacoDog
+                              : isAuthor
+                              ? currentUser
+                              : activeChatUser;
+                          return (
+                            <div
+                              id={index.toString()}
+                              key={index}
+                              className={`flex  w-fit gap-4 ${isAuthor && "self-end"} items-end`}
+                            >
+                              {!isAuthor && (
+                                <Avatar className="mb-1 z-0">
+                                  <AvatarImage src={"/avatars/tacodog.png"} />
+                                  <AvatarFallback>{author.username[0]}</AvatarFallback>
+                                </Avatar>
+                              )}
+                              <div
+                                className={`${
+                                  isAuthor ? "items-end" : "items-start"
+                                } flex flex-col `}
+                              >
+                                <Label
+                                  htmlFor={index.toString()}
+                                  className="px-2 flex justify-start text-xs text-slate-500"
+                                >
+                                  {author.username}
+                                </Label>
 
-            <div className="bottom-[6.8rem] h-4 z-50  absolute w-full border-t backdrop-blur-lg brightness-75"></div>
-            <div className=" relative bottom-0 overflow-hidden h-[8.2rem] flex gap-2 w-full px-5 justify-center  mx-auto ">
-              <span
-                ref={chatMessageRef}
-                onFocus={() => handleFocus()}
-                onBlur={() => handleBlur()}
-                onInput={(e) => setChatMessage((e.target as HTMLElement).textContent)}
-                contentEditable
-                className={`${
-                  chatMessage ? "text-white" : "text-slate-500"
-                } max-h-28 px-4 h-fit py-2 overflow-y-auto scrollbar  items-center inline-flex rounded border-2   w-full textarea`}
-                role="textbox"
-                onKeyDown={handleSendMessage}
-              ></span>
-            </div>
-          </div>
-        ) : (
-          <div className="w-full  flex-1 flex items-center text-[8rem] justify-center ">
-            Helllow!
-          </div>
-        )}
+                                <CardContent
+                                  id={index.toString()}
+                                  key={index}
+                                  className="border p-3 flex items-start  text-left w-auto rounded-lg"
+                                >
+                                  {message.chatMessage}
+                                </CardContent>
+                                {/* )} */}
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {/* empty div */}
+                        <div className="min-h-3 "></div>
+                      </>
+                    ) : (
+                      <CardDescription className="h-full bg-black w-full text-center flex text-lg flex-col justify-center items-center">
+                        <span className="text-3xl leading-none">Add TacoDog</span>in your chats!
+                        <span className="text-sm text-[#3b4f72] ">
+                          Use a &quot;@t&quot; prefix
+                          <br />
+                          Have fun! Woof!
+                        </span>
+                      </CardDescription>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="bottom-[6.8rem] h-4 z-50  absolute w-full border-t backdrop-blur-lg brightness-75"></div>
+              <div className=" relative bottom-0 overflow-hidden h-[8.2rem] flex gap-2 w-full px-5 justify-center  mx-auto ">
+                <span
+                  ref={chatMessageRef}
+                  onFocus={() => handleFocus()}
+                  onBlur={() => handleBlur()}
+                  onInput={(e) => setChatMessage((e.target as HTMLElement).textContent)}
+                  contentEditable
+                  className={`${
+                    chatMessage ? "text-white" : "text-slate-500"
+                  } max-h-28 px-4 h-fit py-2 overflow-y-auto scrollbar  items-center inline-flex rounded border-2   w-full textarea`}
+                  role="textbox"
+                  onKeyDown={handleSendMessage}
+                />
+              </div>
+            </>
+          )}
+        </div>
+        {/* // ) : (
+        //   <div className="w-full  flex-1 flex items-center text-[8rem] justify-center ">
+        //     Helllow!
+        //   </div>
+        // )} */}
       </div>
 
       {/* </div> */}

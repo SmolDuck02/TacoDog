@@ -4,21 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ThemeModeButton from "@/components/ui/theme-mode-button";
-import type { User } from "@/lib/types";
+import { registerUser } from "@/lib/api";
+import { RegistrationError, type User } from "@/lib/types";
 import { iconSizeSmall } from "@/lib/utils";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function Home() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [isError, setIsError] = useState({ show: false, message: "" });
-  const [isValid, setIsValid] = useState({ show: false, message: "" });
+  const [isError, setIsError] = useState<RegistrationError>({ show: false });
+  const [isValid, setIsValid] = useState<RegistrationError>({ show: false });
   const [mode, setMode] = useState<"Sign In" | "Sign Up">("Sign In");
   const [formData, setFormData] = useState<User>({ id: "", username: "", password: "" });
   const [confirmPassword, setConfirmPassword] = useState<String>("");
@@ -31,17 +33,19 @@ export default function Home() {
 
   //confirmation password validation
   useEffect(() => {
-    if (
-      (!confirmPassword && formData.password) ||
-      (confirmPassword && !(confirmPassword === (formData.password || " ")))
-    ) {
-      if (!isValid.show) setIsValid({ show: true, message: "Passwords don't match!" });
-    } else if (formData.password === confirmPassword) {
-      setIsValid({ show: false, message: "" });
-    } else {
-      if (!isValid.show || !confirmPassword) setIsValid({ show: false, message: "" });
+    if (mode.match("Sign Up")) {
+      if (
+        (!confirmPassword && formData.password) ||
+        (confirmPassword && !(confirmPassword === (formData.password || " ")))
+      ) {
+        if (!isValid.show) setIsValid({ show: true, message: "Passwords don't match!" });
+      } else if (formData.password === confirmPassword) {
+        setIsValid({ show: false, message: "" });
+      } else {
+        if (!isValid.show || !confirmPassword) setIsValid({ show: false, message: "" });
+      }
     }
-  }, [confirmPassword]);
+  }, [confirmPassword, formData, mode, isValid]);
 
   //password validation
   useEffect(() => {
@@ -63,7 +67,7 @@ export default function Home() {
         else setIsValid({ show: false, message: "" });
       }
     }
-  }, [formData]);
+  }, [formData, mode, confirmPassword]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value != " ")
@@ -74,13 +78,28 @@ export default function Home() {
       }
   };
 
+  const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsError({ show: false });
+    if (formData.username && formData.password && confirmPassword) {
+      setIsLoading(true);
+      registerUser(formData)
+        .then(() => {
+          toast("Registration Successful!");
+          setMode("Sign In");
+          setIsLoading(false);
+        })
+        .catch((error) => {
+          setIsError({ show: true, message: error.message });
+          setIsLoading(false);
+        });
+    } else {
+      setIsError({ show: true, message: "Fill in all fields!" });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (mode.match("Sign Up") && !confirmPassword.match(formData.password || "")) {
-      setIsError({ show: true, message: "Passwords don't match!" });
-      return;
-    }
     if (formData.username && formData.password) {
       setIsLoading(true);
 
@@ -149,7 +168,10 @@ export default function Home() {
           Connect better with a built-in AI buddy.
         </div>
       </div>
-      <form onSubmit={handleSubmit} className="z-20 w-1/2">
+      <form
+        onSubmit={(e) => (mode.match("Sign In") ? handleSubmit(e) : handleRegister(e))}
+        className="z-20 w-1/2"
+      >
         <Card className="min-h-96 w-[25rem] backdrop-blur-lg opacity-80">
           <CardHeader className="pb-3">
             <CardTitle className="flex text-3xl items-end justify-between">
@@ -191,7 +213,7 @@ export default function Home() {
                     className="absolute text-slate-500 right-4 cursor-pointer"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff size={iconSizeSmall} /> : <Eye size={iconSizeSmall  } />}
+                    {showPassword ? <EyeOff size={iconSizeSmall} /> : <Eye size={iconSizeSmall} />}
                   </div>
                 </div>
                 {mode == "Sign Up" && (

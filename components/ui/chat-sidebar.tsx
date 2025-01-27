@@ -4,31 +4,37 @@ import { User } from "@/lib/types";
 import { iconSize, iconSizeSmall } from "@/lib/utils";
 import defaultAvatar from "@/public/avatars/defaultAvatar.png";
 import { Columns2, Search, SquarePen } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { ProfileModal } from "../modals/profile-modal";
-import { Avatar, AvatarFallback } from "./avatar";
+import { Avatar } from "./avatar";
 import { CardTitle } from "./card";
 import { Input } from "./input";
 export default function ChatSidebar({
-  allUsers,
+  userChats,
+  activeChatUserID,
   handleSetActiveChat,
   handleNewChat,
+  handleNewChatClose,
   handleSearchModalMini,
 }: {
-  allUsers: User[];
+  userChats: User[];
+  activeChatUserID: string;
   handleSetActiveChat: (id: string) => void;
   handleNewChat: () => void;
+  handleNewChatClose: () => void;
   handleSearchModalMini: (value: string) => void;
 }) {
-  const { data: session } = useSession();
-  const user = session?.user as User;
   const { theme, setTheme } = useTheme();
   const [checked, setChecked] = useState(false);
-  const [isChatSidebar, setIsChatSidebar] = useState(false);
+  const [isChatSidebar, setIsChatSidebar] = useState<false | true | "search" | "column">(false);
   const [isAccountSidebar, setAccountSidebar] = useState(false);
+
+  const handleSearch = () => {
+    setIsChatSidebar("search");
+    handleNewChatClose();
+  };
 
   useEffect(() => {
     setChecked(!(theme == "light"));
@@ -37,10 +43,10 @@ export default function ChatSidebar({
     setTheme(theme == "light" ? "dark" : "light");
   }
 
-  function toggleAccountSidebar() {
-    setAccountSidebar(!isAccountSidebar);
-    setIsChatSidebar(true);
-  }
+  // function toggleAccountSidebar() {
+  //   setAccountSidebar(!isAccountSidebar);
+  //   setIsChatSidebar(true);
+  // }
   const searchRef = useRef<HTMLInputElement | null>(null);
   function toggleChatSidebar() {
     setIsChatSidebar(!isChatSidebar);
@@ -48,7 +54,7 @@ export default function ChatSidebar({
   }
 
   useEffect(() => {
-    if (searchRef.current && isChatSidebar) {
+    if (searchRef.current && isChatSidebar == "search") {
       searchRef.current.focus();
     }
   }, [isChatSidebar]);
@@ -103,11 +109,7 @@ export default function ChatSidebar({
               />
             </div>
           ) : (
-            <Search
-              size={iconSize}
-              className="my-1 cursor-pointer"
-              onClick={() => setIsChatSidebar(true)}
-            />
+            <Search size={iconSize} className="my-1 cursor-pointer" onClick={handleSearch} />
           )}
         </div>
 
@@ -117,14 +119,16 @@ export default function ChatSidebar({
           className={`  ${isChatSidebar ? "h-[31rem]" : "h-[27.5rem]"} 
            py-2 flex w-full scrollbar overflow-auto flex-col gap-4 px-3`}
         >
-          {session &&
-            allUsers.map((user: User, index: number) => (
+          {userChats &&
+            userChats.map((user: User, index: number) => (
               <div
-                onClick={() => handleSetActiveChat(user.id)}
-                key={user.id}
+                onClick={() => handleSetActiveChat(user?.id)}
+                key={index}
                 className={`flex gap-3 ${
-                  isChatSidebar && "hover:bg-slate-900 "
-                } hover:cursor-pointer p-2 rounded w-full items-center`}
+                  isChatSidebar ? "hover:bg-slate-900 rounded " : "rounded-full"
+                } ${
+                  activeChatUserID == user.id ? " bg-yellow-800 font-bold" : "font-light"
+                } hover:cursor-pointer p-2  w-full items-center`}
               >
                 <Avatar className="h-9 w-9 ">
                   <Image
@@ -134,11 +138,9 @@ export default function ChatSidebar({
                     className="aspect-square h-full w-full"
                     src={user?.avatar?.img || defaultAvatar}
                   />
-                  <AvatarFallback>{user.username[0]}</AvatarFallback>
+                  {/* <AvatarFallback>{user?.username[0] || ""}</AvatarFallback> */}
                 </Avatar>
-                {isChatSidebar && (
-                  <CardTitle className="text-lg font-light">{user.username}</CardTitle>
-                )}
+                {isChatSidebar && <CardTitle className="text-lg">{user?.username}</CardTitle>}
               </div>
             ))}
         </div>
@@ -150,7 +152,7 @@ export default function ChatSidebar({
             ${!isAccountSidebar && "p-2"}
           } border-t-2 flex justify-center items-center  gap-1`}
       >
-        <ProfileModal isChatSidebar={isChatSidebar} />
+        <ProfileModal isChatSidebar={isChatSidebar as boolean} />
 
         {!isAccountSidebar && (
           <span

@@ -1,5 +1,4 @@
 import type { User } from "@/lib/types";
-import { avatars, banners } from "@/lib/utils";
 import { UpstashRedisAdapter } from "@next-auth/upstash-redis-adapter";
 import { Redis } from "@upstash/redis";
 import type { NextAuthOptions } from "next-auth";
@@ -16,46 +15,61 @@ export const options: NextAuthOptions = {
       async authorize(credentials) {
         const { formData, mode } = credentials as { mode: string; formData: string };
         const { username, password } = JSON.parse(formData);
-
-        let user = await redis.get(`user:${username}`);
-        console.log(user, formData);
+        
         try {
           if (mode === "update") {
             return JSON.parse(formData) as User;
-          } else if (mode === "Sign In") {
+          } else {
+            // let user = await redis.get(`user:${username}`);
+            let users = await redis.keys(`user:*`);
+            let user;
+            if (users.length > 0) {
+              const values: User[] = await redis.mget(...users);
+              values.map((v) => console.log(v.username));
+              user = values.find((value) => {
+                return value.username == username;
+              });
+            }
+            console.log("fefe", user);
             if (!user) {
               throw new Error("User not found!");
             }
 
-            const passwordMatch = await bcrypt.compare(password, (user as User).password);
-            if (!passwordMatch) {
-              throw new Error("Incorrect password!");
-            }
+            const passwordMatch = await bcrypt.compare(password, user.password);
+            if (!passwordMatch) throw new Error("Password Incorrect!");
+
+            console.log("Found user: ", user);
+
+            return user;
+
+            // const passwordMatch = await bcrypt.compare(password, (user as User).password);
+            // if (!passwordMatch) {
+            //   throw new Error("Incorrect password!");
+            // }
           }
           //user registration
-          else {
-            if (user) {
-              throw new Error("User already exists!");
-            }
+          // else {
+          //   if (user) {
+          //     throw new Error("User already exists!");
+          //   }
 
-            const id = await redis.incr("userCounter:id");
-            const hashedPassword = await bcrypt.hash(password, 10);
+          //   const hashedPassword = await bcrypt.hash(password, 10);
 
-            //redis.set dont return the record created, only an 'OK'
-            await redis.set(`user:${username}`, {
-              username,
-              password: hashedPassword,
-              id,
-              avatar: avatars[id % avatars.length],
-              banner: banners[id % banners.length],
-            });
-          }
+          //   //redis.set dont return the record created, only an 'OK'
+          //   await redis.set(`user:${id}`, {
+          //     id,
+          //     username,
+          //     password: hashedPassword,
+          //     avatar: avatars[id % avatars.length],
+          //     banner: banners[id % banners.length],
+          //   });
+          // }
 
-          user = await redis.get(`user:${username}`);
-          console.log(`Auth fetched user: ${user}`);
-          return user as User;
+          // user = await redis.get(`user:${id}`);
+          // console.log(`Auth fetched user: ${user}`);
+          // return user as User;
         } catch (error) {
-          console.error(`${mode} catch error:`, error);
+          console.log(`${mode} catch error:`, error);
           throw error;
         }
       },

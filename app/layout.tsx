@@ -2,8 +2,8 @@ import AuthProvider from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
 import { Toaster } from "sonner";
+import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <AuthProvider>
-        <body className={inter.className}>
+        <body className={`${inter.className} text-[var(--color)]`}>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -31,7 +31,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             {children}
-            <Toaster /> 
+            <Toaster />
           </ThemeProvider>
         </body>
       </AuthProvider>

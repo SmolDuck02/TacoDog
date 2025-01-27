@@ -6,6 +6,7 @@ import defaultBanner from "@/public/bg/defaultBG.avif";
 import plant from "@/public/bg/plant.jpg";
 import sea from "@/public/bg/sea.jpg";
 import shore from "@/public/bg/shore.jpg";
+import { Redis } from "@upstash/redis";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -28,3 +29,11 @@ export const banners = [
   { img: shore, name: "Shore", source: "Marc Kleen" },
   { img: sea, name: "Sea", source: "Rafael Garcin" },
 ];
+
+
+export const TacoDog = { id: "0", username: "TacoDog" };
+
+export const redis = new Redis({
+  url: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_URL,
+  token: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN,
+});

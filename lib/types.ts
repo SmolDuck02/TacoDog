@@ -8,13 +8,17 @@ export interface User extends NextAuthUser {
 }
 export interface Chat {
   chat: string;
-  user: User;
+  userID: number;
   time?: string;
 }
 
 export interface ChatHistory {
   senderID: string;
   chatMessage: string;
+}
+export interface RegistrationError {
+  show: boolean;
+  message?: string;
 }
 export interface Error {
   error?: { error?: string; errors?: string };

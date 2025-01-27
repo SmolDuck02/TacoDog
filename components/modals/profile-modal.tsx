@@ -4,15 +4,23 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { User } from "@/lib/types";
 import defaultAvatar from "@/public/avatars/defaultAvatar.png";
 import defaultBanner from "@/public/bg/defaultBG.avif";
+
 import { signOut, useSession } from "next-auth/react";
+import { useTheme } from "next-themes";
 import Image from "next/image";
 import { DialogFooter, DialogHeader } from "../ui/dialog";
+import { Switch } from "../ui/switch";
 import EditProfileModal from "./edit-profile-modal";
 
 export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
   const { data: session } = useSession();
   const user = session?.user as User;
-  
+
+  const { setTheme, theme } = useTheme();
+
+  function toggleMode() {
+    setTheme(theme == "light" ? "dark" : "light");
+  }
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -26,7 +34,9 @@ export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
             <AvatarImage src={user?.avatar?.img.src || defaultAvatar.src} />
             <AvatarFallback>{user?.username[0]}</AvatarFallback>
           </Avatar>
-          <span className={` ${isChatSidebar ? "flex" : "hidden"} font-bold`}>{user?.username}</span>
+          <span className={` ${isChatSidebar ? "flex" : "hidden"} font-bold`}>
+            {user?.username}
+          </span>
         </div>
       </PopoverTrigger>
       <PopoverContent className={` p-0 w-[20rem] sm:max-w-[425px]`}>
@@ -63,25 +73,25 @@ export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
           {/* profile menu items*/}
           <div className="flex flex-col gap-3 py-3">
             <div className={`w-full  px-6 text-sm flex flex-col`}>
-              <div className="flex w-full justify-between">
+              <div className="flex w-full items-center justify-between">
                 Username
                 <p>{user?.username}</p>
               </div>
             </div>
-            {/* <div className={`  w-full px-6 text-sm flex flex-col`}>
-              <div className="flex w-full justify-between">
+            <div className={`  w-full px-6 text-sm flex flex-col`}>
+              <div className="flex w-full  items-center justify-between">
                 Dark mode
-                <Switch className="h-5 w-5" onClick={toggleMode} checked={checked} />
+                <Switch onCheckedChange={() => toggleMode()} checked={theme === "dark"} />
               </div>
-            </div> */}
+            </div>
             <div className={`  w-full  px-6 text-sm flex flex-col`}>
-              <div className="flex w-full justify-between">
+              <div className="flex w-full  items-center justify-between">
                 Avatar
                 <p>{user?.avatar?.name}</p>
               </div>
             </div>
             <div className={`  w-full  px-6 text-sm flex flex-col`}>
-              <div className="flex w-full justify-between">
+              <div className="flex w-full  items-center justify-between">
                 Banner
                 <p>{user?.banner?.name}</p>
               </div>

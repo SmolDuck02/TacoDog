@@ -31,7 +31,7 @@ export default function Home() {
     }
   }, [session, router]);
 
-  //confirmation password validation
+  //confirm password and password validation
   useEffect(() => {
     if (mode.match("Sign Up")) {
       if (
@@ -44,12 +44,8 @@ export default function Home() {
       } else {
         if (!isValid.show || !confirmPassword) setIsValid({ show: false, message: "" });
       }
-    }
-  }, [confirmPassword, formData, mode, isValid]);
 
-  //password validation
-  useEffect(() => {
-    if (mode.match("Sign Up")) {
+      // password validation
       if (
         formData.password &&
         !formData.password.match(/^(?=.*[A-Za-z])(?=.*\d)(?=.*\W)[A-Za-z\d\W]{8,}$/)
@@ -67,7 +63,29 @@ export default function Home() {
         else setIsValid({ show: false, message: "" });
       }
     }
-  }, [formData, mode, confirmPassword]);
+  }, [confirmPassword, formData, mode, isValid]);
+
+  //password validation
+  // useEffect(() => {
+  //   if (mode.match("Sign Up")) {
+  //     if (
+  //       formData.password &&
+  //       !formData.password.match(/^(?=.*[A-Za-z])(?=.*\d)(?=.*\W)[A-Za-z\d\W]{8,}$/)
+  //     ) {
+  //       setIsValid({
+  //         show: true,
+  //         message:
+  //           "Password must meet the following requirements: <br />- At least 8 characters long.<br />- Contain both letters and numbers.<br />- Include at least one special character (e.g., @, $, !, %, *, ?, &).",
+  //       });
+  //     } else if (formData.password === confirmPassword) {
+  //       setIsValid({ show: false, message: "" });
+  //     } else {
+  //       if ((!formData.password && confirmPassword) || formData.password !== confirmPassword)
+  //         setIsValid({ show: true, message: "Passwords don't match!" });
+  //       else setIsValid({ show: false, message: "" });
+  //     }
+  //   }
+  // }, [formData, mode, confirmPassword]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value != " ")
@@ -142,10 +160,10 @@ export default function Home() {
   return (
     <main
       className={`${
-        status !== "loading" && !session?.user ? "flex " : "hidden"
-      } h-screen min-w-screen justify-center items-center gap-10 overflow-hidden`}
+        status !== "loading" && !session?.user ? "flex flex-col lg:flex-row " : "hidden"
+      } h-screen w-screen relative bg-[#eee] dark:bg-slate-950 justify-center items-center gap-10 overflow-hidden`}
     >
-      <div className="z-10  max-h-screen overflow-hidden flex flex-col items-end justify-center w-full absolute">
+      {/* <div className="z-10  max-h-screen overflow-hidden hidden lg:flex flex-col items-end justify-center w-full absolute">
         <Image
           src="/avatars/tacodog.png"
           alt="logo"
@@ -153,26 +171,28 @@ export default function Home() {
           width={300}
           className="scale-x-[-1] w-1/2 brightness-80"
         />
-        <p className="absolute bottom-5 right-10 text-white ">
+        <p className=" drop-shadow-md absolute bottom-5 right-10 text-white ">
           Avatar Photos by{" "}
           <a href="https://www.instagram.com/mcfriendy/?hl=en" className=" underline">
             Alison Friend
           </a>
         </p>
-      </div>
-      <div className="flex flex-col justify-end relative h-96 w-1/2 items-end">
-        <CardTitle className=" text-[8rem] leading-none ">
-          <span className="text-yellow-700">Taco</span>Dog
+      </div> */}
+
+      <div className="z-10  flex flex-col justify-center items-start relative  lg:h-96 lg:w-1/2 lg:items-end">
+        <CardTitle className=" lg:text-[8rem] text-[5rem] leading-none drop-shadow-lg  ">
+          Taco<span className="text-yellow-700">Dog</span>
         </CardTitle>
-        <div className="mr-32 pb-10 text-xl text-slate-400">
+        <div className="text-sm  h-fit rounded pl-5 bg-opacity-50  lg:mr-16  lg:text-2xl drop-shadow-lg">
           Connect better with a built-in AI buddy.
         </div>
       </div>
+
       <form
         onSubmit={(e) => (mode.match("Sign In") ? handleSubmit(e) : handleRegister(e))}
-        className="z-20 w-1/2"
+        className="z-20 w-full  lg:w-1/2 flex lg:justify-start justify-center"
       >
-        <Card className="min-h-96 w-[25rem] backdrop-blur-lg opacity-80">
+        <Card className="min-h-96 w-[25rem] backdrop-blur-lg opacity-90">
           <CardHeader className="pb-3">
             <CardTitle className="flex text-3xl items-end justify-between">
               {mode} <ThemeModeButton />
@@ -280,6 +300,16 @@ export default function Home() {
           </CardContent>
         </Card>
       </form>
+
+      <div className=" bottom-0 lg:bottom-auto  w-full right-[-58%]  absolute ">
+        <Image
+          src="/avatars/tacodog.png"
+          alt="logo"
+          height={500}
+          width={500}
+          className=" rounded-full scale-x-[-1]  object-cover  w-[80%] lg:w-[50%] brightness-100"
+        />
+      </div>
     </main>
   );
 }

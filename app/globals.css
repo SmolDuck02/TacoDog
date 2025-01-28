@@ -5,6 +5,7 @@
 @layer base {
   :root {
     --color: #333;
+    --inverse-color: #ddd;
 
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -39,7 +40,8 @@
 
   .dark {
     --color: #ddd;
-    
+    --inverse-color: #333;
+
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
 
@@ -79,6 +81,12 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .bone {
+    @apply size-[2.5rem] lg:size-[5rem] animate-pop;
   }
 }
 

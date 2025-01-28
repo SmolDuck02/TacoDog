@@ -15,7 +15,6 @@ import EditProfileModal from "./edit-profile-modal";
 export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
   const { data: session } = useSession();
   const user = session?.user as User;
-
   const { setTheme, theme } = useTheme();
 
   function toggleMode() {
@@ -26,9 +25,9 @@ export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
       <PopoverTrigger asChild>
         {/* profile header */}
         <div
-          className={`  rounded p-2 flex gap-4   ${
-            isChatSidebar ? "justify-start hover:bg-slate-700" : "justify-center"
-          } items-center  w-full cursor-pointer `}
+          className={`   p-2 flex gap-4  hover:bg-muted  ${
+            isChatSidebar ? "justify-start rounded w-full" : "justify-center rounded-full w-fit"
+          } items-center   cursor-pointer `}
         >
           <Avatar className="h-9 w-9 ">
             <AvatarImage src={user?.avatar?.img.src || defaultAvatar.src} />

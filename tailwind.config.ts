@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 const defaultTheme = require("tailwindcss/defaultTheme");
 const config = {
-  darkMode: ["class"],
+  darkMode: "class",
   content: [
     "./pages/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
@@ -21,6 +21,10 @@ const config = {
       screens: {
         xs: "475px",
         ...defaultTheme.screens,
+      },
+      boxShadow: {
+        right: "4px 0px 8px rgba(0, 0, 0, 0.2)", // Custom shadow on the right
+        "right-lg": "6px 0px 16px rgba(0, 0, 0, 0.3)", // Larger shadow
       },
       colors: {
         border: "hsl(var(--border))",
@@ -71,8 +75,14 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "pop-spin": {
+          "0%": { transform: "scale(1)" },
+          "12%": { transform: " scale(1.2)" },
+          "24%, 100%": { transform: " scale(1)" },
+        },
       },
       animation: {
+        pop: "pop-spin 1.5s ease-out infinite",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },

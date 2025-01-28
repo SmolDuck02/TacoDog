@@ -15,7 +15,7 @@ export const options: NextAuthOptions = {
       async authorize(credentials) {
         const { formData, mode } = credentials as { mode: string; formData: string };
         const { username, password } = JSON.parse(formData);
-        
+
         try {
           if (mode === "update") {
             return JSON.parse(formData) as User;
@@ -25,12 +25,12 @@ export const options: NextAuthOptions = {
             let user;
             if (users.length > 0) {
               const values: User[] = await redis.mget(...users);
-              values.map((v) => console.log(v.username));
               user = values.find((value) => {
                 return value.username == username;
               });
             }
-            console.log("fefe", user);
+            console.log("Found Username match", user?.username);
+
             if (!user) {
               throw new Error("User not found!");
             }
@@ -38,7 +38,7 @@ export const options: NextAuthOptions = {
             const passwordMatch = await bcrypt.compare(password, user.password);
             if (!passwordMatch) throw new Error("Password Incorrect!");
 
-            console.log("Found user: ", user);
+            console.log("Logging in: Success Found user: ", user.username);
 
             return user;
 

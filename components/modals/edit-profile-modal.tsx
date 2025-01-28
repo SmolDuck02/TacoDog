@@ -129,7 +129,7 @@ export default function EditProfileModal() {
             </div>
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="gap-2 flex-row">
           <Button type="submit" disabled={isLoading} onClick={handleSaveChanges} className="w-full">
             {isLoading ? (
               <>

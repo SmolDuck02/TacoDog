@@ -9,8 +9,11 @@ import {
 } from "./dropdown-menu";
 
 export default function ThemeModeButton() {
-  const { setTheme } = useTheme();
+  const { setTheme, theme } = useTheme();
 
+  function toggleMode(mode: string) {
+    setTheme(mode);
+  }
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -21,9 +24,9 @@ export default function ThemeModeButton() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        {/* <DropdownMenuItem onClick={() => setTheme("light")}>Light</DropdownMenuItem> */}
-        <DropdownMenuItem onClick={() => setTheme("dark")}>Dark</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>System</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => toggleMode("light")}>Light</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => toggleMode("dark")}>Dark</DropdownMenuItem>
+        {/* <DropdownMenuItem onClick={() => setTheme("system")}>System</DropdownMenuItem> */}
       </DropdownMenuContent>
     </DropdownMenu>
   );

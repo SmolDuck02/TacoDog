@@ -1,5 +1,4 @@
 import axios from "axios";
-import RegisterModal from "../modals/register-modal";
 import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
 import { Button } from "./button";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
@@ -55,8 +54,8 @@ export default function Account({
                 </>
               ) : (
                 <>
-                  <RegisterModal setUser={setUser} mode="Sign Up" />
-                  <RegisterModal setUser={setUser} mode="Sign In" />
+                  {/* <RegisterModal setUser={setUser} mode="Sign Up" />
+                  <RegisterModal setUser={setUser} mode="Sign In" /> */}
                 </>
               )}
             </div>

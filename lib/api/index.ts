@@ -24,7 +24,7 @@ export async function registerUser(formData: User) {
   if (users.length > 0) {
     const values: User[] = await redis.mget(...users);
     user = values.find((value) => {
-      return value.username === username;
+      return value.username == username;
     });
   }
 
@@ -52,38 +52,7 @@ export async function registerUser(formData: User) {
   //   banner: { img: bg, name: "Cacto", source: "Ingmar H" },
   // });
 
-  const keys = await redis.keys("chatHistory:*");
-  const s = await redis.keys("user:*");
-  console.log("fe", keys, s);
-
   return { success: "Registration successful" };
-}
-
-export async function getUserChats(id: string) {
-  try {
-    const pattern = `_${id}_`;
-    const keys = await redis.keys(`chatHistory*${pattern}*`);
-
-    if (!keys || keys.length === 0) {
-      console.log("No user chats found");
-      return null;
-    }
-
-    const userIDs = keys.map((k) => {
-      return k.split("_").find((i) => !isNaN(Number(i)) && i != id);
-    });
-
-    const userChats: User[] = (await Promise.all(
-      userIDs.map((id) => redis.get(`user:${id}`))
-    )) as User[];
-
-    console.log("user chats: ", userIDs, userChats, keys);
-
-    return userChats;
-  } catch (error) {
-    console.error("error fetching user chats ", error);
-    return null;
-  }
 }
 
 export async function getAllUsers() {
@@ -113,6 +82,34 @@ export async function getActiveChatHistory(chatUsers: string) {
     return chatHistory;
   } catch (error) {
     console.error(`Error fetching chat history with ${chatUsers}`, error);
+    return null;
+  }
+}
+
+export async function getUserChats(id: string) {
+  try {
+    const pattern = `_${id}_`;
+    const keys = await redis.keys(`chatHistory*${pattern}*`);
+
+    if (!keys || keys.length === 0) {
+      console.log("No user chats found with ", id, pattern);
+      return null;
+    }
+
+    const userIDs = keys.map((k) => {
+      const ids = k.split("_").filter((i) => !isNaN(Number(i)));
+      return ids[0] == id ? ids[1] : ids[0];
+    });
+
+    const userChats: User[] = (await Promise.all(
+      userIDs.map((id) => redis.get(`user:${id}`))
+    )) as User[];
+
+    console.log("user chats: ", userIDs, userChats, keys);
+
+    return userChats;
+  } catch (error) {
+    console.error("error fetching user chats ", error);
     return null;
   }
 }

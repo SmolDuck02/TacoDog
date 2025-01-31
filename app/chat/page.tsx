@@ -14,14 +14,19 @@ import { ChatHistory, User } from "@/lib/types";
 import { iconSize, initializeCamera } from "@/lib/utils";
 import TacoDogLogo from "@/public/logo.png";
 import { Bone, Loader, Video, VideoOff } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import Image, { StaticImageData } from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function Home() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session } = useSession({
+    required: true,
+    onUnauthenticated: () => {
+      signIn();
+    },
+  });
 
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);

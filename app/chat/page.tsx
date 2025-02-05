@@ -8,10 +8,10 @@ import ChatBanner from "@/components/ui/chat-banner";
 import ChatMessages from "@/components/ui/chat-messages";
 import ChatSidebar from "@/components/ui/chat-sidebar";
 import { Input } from "@/components/ui/input";
-import { askTacoDog, getActiveChatHistory, getAllUsers, getUserChats } from "@/lib/api";
+import { askTacoDog, getAllUsers, getUserChats } from "@/lib/api";
 import { socket } from "@/lib/socketClient";
 import { ChatHistory, User } from "@/lib/types";
-import { iconSize, initializeCamera } from "@/lib/utils";
+import { iconSize, initializeCamera, TacoDog } from "@/lib/utils";
 import TacoDogLogo from "@/public/logo.png";
 import { Bone, Loader, Video, VideoOff } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
@@ -19,21 +19,21 @@ import Image, { StaticImageData } from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+interface UserChat {
+  user: User;
+  chats: ChatHistory[] | null;
+}
 export default function Home() {
   const router = useRouter();
-  const { data: session } = useSession({
-    required: true,
-    onUnauthenticated: () => {
-      signIn();
-    },
-  });
+  const { data: session } = useSession();
 
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [userChats, setUserChats] = useState<User[] | null>(null);
+  const [userChats, setUserChats] = useState<UserChat[] | null>(null);
+  const [activeUserChat, setActiveUserChat] = useState<UserChat | null>(null);
   const [chatUsersID, setChatUsersID] = useState<string | null>();
   const [searchText, setSearchText] = useState("");
-  const [activeChatUser, setActiveChatUser] = useState<User | null>(null);
+  // const [activeChatUser, setActiveChatUser] = useState<User | null>(null);
   const [activeChatHistory, setActiveChatHistory] = useState<ChatHistory[] | null>(null);
   const [chatMessage, setChatMessage] = useState<string | null>();
   const [isNewChat, setIsNewChat] = useState(false);
@@ -44,6 +44,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isVideoCallRinging, setIsVideoCallRinging] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [callDuration, setCallDuration] = useState<{ start: number; date: Date } | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const messageContainerRef = useRef<HTMLDivElement | null>(null);
   const helloRef = useRef<HTMLDivElement | null>(null);
@@ -61,24 +62,33 @@ export default function Home() {
       getAllUsers()
         .then((response) => {
           if (response) {
-            setAllUsers(response);
-            setFilteredUsers(response);
+            setAllUsers(response); //whole user database
+            setFilteredUsers(response); //meaning both the search filters and userChats with other users
             setChatUsersID(`_0_${id}_`);
 
-            getActiveChatHistory(`_0_${id}_`).then((chatHistory) => {
-              if (chatHistory) {
-                setActiveChatHistory(chatHistory);
-              } else {
-                fade();
-              }
-              setActiveChatUser(response.find((user) => user.id == "0") as User);
-            });
+            // getActiveChatHistory(`_0_${id}_`).then((chatHistory) => {
+            //   if (chatHistory) {
+            //     setActiveChatHistory(chatHistory);
+            //   } else {
+            //     fade();
+            //   }
+            //   setActiveChatUser(response.find((user) => user.id == "0") as User);
+            // });
 
             getUserChats(id)
               .then((userChatsResponse) => {
-                if (userChatsResponse) setUserChats(userChatsResponse);
-                else {
-                  setUserChats([response.find((user) => user.id == "0") as User]);
+                if (userChatsResponse) {
+                  setUserChats(
+                    userChatsResponse.sort(
+                      (a, b) =>
+                        new Date(b.chats[b.chats.length - 1].date).getTime() -
+                        new Date(a.chats[a.chats.length - 1].date).getTime()
+                    )
+                  );
+                  setActiveUserChat(userChatsResponse[0]);
+                } else {
+                  setUserChats([{ user: TacoDog, chats: null }]);
+                  setActiveUserChat({ user: TacoDog, chats: null });
                 }
               })
               .catch((error) => console.log("Error getting user chats: ", error));
@@ -95,29 +105,43 @@ export default function Home() {
   }, []);
 
   const handleNewChatClose = () => {
-    setActiveChatUser(allUsers?.filter((user) => user?.username === "TacoDog")[0] as User);
+    // setActiveChatUser(allUsers?.filter((user) => user?.username === "TacoDog")[0] as User);
     setIsNewChat(false);
     setShowSearchModal(false);
   };
 
   const handleSetActiveChat = (id: string) => {
-    if (currentUser) {
+    if (currentUser && userChats) {
       const IDs = `_${[id, currentUser.id].sort().join("_")}_`;
+      const isNewChat = (userChats.find((userChat) => userChat.user.id === id) as UserChat) || null;
 
       setChatUsersID(IDs);
       setIsNewChat(false);
       setShowSearchModal(false);
-
-      getActiveChatHistory(IDs).then((chatHistory) => {
-        setActiveChatHistory(chatHistory);
-        setActiveChatUser(allUsers.find((user) => user.id === id) as User);
-      });
+      setActiveUserChat(
+        isNewChat
+          ? isNewChat
+          : { user: allUsers.find((user) => user.id === id) as User, chats: null }
+      );
+      // setActiveChatUser(allUsers.find((user) => user.id === id) as User);
+      // if (userChats)
+      //   setActiveChatHistory(userChats.find((chat) => chat.id === id) as ChatHistory[]);
+      // getActiveChatHistory(IDs).then((chatHistory) => {
+      //   setActiveChatHistory(chatHistory);
+      //   setActiveChatUser(allUsers.find((user) => user.id === id) as User);
+      // });
     }
   };
 
   useEffect(() => {
     socket.on(`receiveChat:${chatUsersID}`, async (value) => {
-      setActiveChatHistory([...(activeChatHistory || []), value]);
+      if (activeUserChat) {
+        setActiveUserChat({
+          ...activeUserChat,
+          chats: [...(activeUserChat.chats || []), value],
+        });
+      }
+      // setActiveChatHistory([...(activeChatHistory || []), value]);
     });
 
     socket.on(`receiveCall:${currentUser?.id}`, (value) => {
@@ -131,17 +155,16 @@ export default function Home() {
       if (receiverID == currentUser?.id) {
         handleSetActiveChat(callerID);
         setShowCamera(true);
-        if (videoRef.current) initializeCamera(videoRef.current);
       } else if (callerID == currentUser?.id) {
         setIsVideoCallRinging(false);
       }
+
+      setCallDuration({ start: new Date().getTime(), date: new Date() });
     });
 
     socket.on(`rejectCall:${currentUser?.id}`, () => {
       console.log("call rejected");
-      setShowCamera(false);
-      setIsVideoCallRinging(false);
-      setIncomingCall(null);
+      handleVideoCallEnd(false);
     });
 
     return () => {
@@ -152,20 +175,42 @@ export default function Home() {
     };
   });
 
+  useEffect(() => {
+    if (videoRef.current) initializeCamera(videoRef.current);
+  }, [showCamera]);
+
   const handleSendMessage = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (socket.connected && e.key === "Enter" && activeChatUser && currentUser && chatMessage) {
+    // if (socket.connected && e.key === "Enter" && activeChatUser && currentUser && chatMessage) {
+    if (socket.connected && e.key === "Enter" && currentUser && chatMessage) {
       e.preventDefault();
 
       if (chatMessageRef.current) chatMessageRef.current.textContent = "";
 
       const chatHistory = {
         chatUsersID: chatUsersID,
-        newChatMessage: { senderID: currentUser.id, chatMessage: chatMessage, time: new Date() },
-        activeChatHistory: activeChatHistory || [],
+        newChatMessage: { senderID: currentUser.id, chatMessage: chatMessage, date: new Date() },
+        activeChatHistory: activeUserChat?.chats || [],
       };
 
-      if (userChats && !userChats.find((user) => user.id == activeChatUser.id)) {
-        userChats.push(activeChatUser);
+      // if (chatUsers && !chatUsers.find((user) => user.id == activeChatUser.id)) {
+      //   chatUsers.push(activeChatUser);
+      // }
+      if (
+        userChats &&
+        activeUserChat &&
+        !userChats.find((userChat) => userChat.user.id == activeUserChat.user.id)
+      ) {
+        userChats.splice(0, 0, { user: activeUserChat.user, chats: [chatHistory.newChatMessage] });
+      } else if (userChats && activeUserChat) {
+        const index = userChats.indexOf(activeUserChat);
+        const updated = [...userChats];
+        // const updated = [...userChats].splice(index, 1);
+        // updated.splice(0, 0, activeUserChat);
+        if (index > 0) {
+          updated.splice(index, 1);
+          updated.splice(0, 0, activeUserChat);
+          setUserChats(updated);
+        }
       }
 
       //user input
@@ -178,7 +223,10 @@ export default function Home() {
         socket.emit("sendChat", {
           ...chatHistory,
           newChatMessage: result,
-          activeChatHistory: [...(activeChatHistory as ChatHistory[]), chatHistory.newChatMessage],
+          activeChatHistory: [
+            ...(activeUserChat?.chats as ChatHistory[]),
+            chatHistory.newChatMessage,
+          ],
         });
       }
 
@@ -221,7 +269,24 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (activeChatHistory) {
+     if (messageContainerRef.current) {
+      const height = messageContainerRef.current.scrollHeight - 630;
+      
+      //double scrollTo due to sequence the scrollTo:instant in the useEffect below this
+      messageContainerRef.current.scrollTo({
+        top: height,
+        behavior: "instant",
+      });
+
+       messageContainerRef.current.scrollTo({
+         top: messageContainerRef.current.scrollHeight,
+         behavior: "smooth",
+       });
+     }
+  }, [activeUserChat?.chats]);
+
+  useEffect(() => {
+    if (activeUserChat?.user) {
       fade();
     }
 
@@ -231,14 +296,12 @@ export default function Home() {
         behavior: "instant",
       });
     }
-  }, [activeChatHistory]);
 
-  useEffect(() => {
-    if (chatMessageRef.current) {
+    if (document.activeElement != chatMessageRef.current && chatMessageRef.current) {
       setChatMessage("");
       chatMessageRef.current.textContent = "Enter message...";
     }
-  }, [isLoading]);
+  }, [activeUserChat?.user, isLoading]);
 
   const handleFocus = () => {
     if (chatMessageRef.current && !chatMessage) {
@@ -265,37 +328,24 @@ export default function Home() {
     setFilteredUsers(allUsers.filter((user) => user.username.toLowerCase().includes(value)));
   };
 
-  // const handleSearchModalMini = useCallback(
-  //   (value: string | null) => {
-  //     if (value) {
-  //       setShowSearchModalMini(true);
-  //       setSearchText(value);
-  //       setFilteredUsers(allUsers.filter((user) => user.username.toLowerCase().includes(value)));
-  //     } else {
-  //       setShowSearchModalMini(false);
-  //     }
-  //   },
-  //   [allUsers]
-  // );
-
   const handleVideoCall = async () => {
     setIsVideoCallRinging(true);
     setShowCamera(true);
 
     if (videoRef.current) initializeCamera(videoRef.current);
 
+    console.log(activeUserChat?.user.id);
     socket.emit("call", {
       caller: currentUser,
-      receiverID: activeChatUser?.id,
+      receiverID: activeUserChat?.user?.id,
+      // receiverID: activeChatUser?.id,
     });
   };
 
-  const handleVideoCallEnd = () => {
-    setIncomingCall(null);
-    setIsVideoCallRinging(false);
+  const handleVideoCallEnd = (emit = true) => {
     setShowCamera(false);
-
-    socket.emit("rejectCall", activeChatUser?.id);
+    setIsVideoCallRinging(false);
+    setIncomingCall(null);
 
     if (videoRef.current) {
       // Stop the video stream tracks
@@ -306,6 +356,25 @@ export default function Home() {
       }
 
       videoRef.current.srcObject = null;
+    }
+
+    if (emit) {
+      socket.emit("rejectCall", activeUserChat?.user?.id);
+      // socket.emit("rejectCall", activeChatUser?.id);
+
+      if (callDuration) {
+        const chatHistory = {
+          chatUsersID: chatUsersID,
+          newChatMessage: {
+            type: "call",
+            start: callDuration.start,
+            end: new Date().getTime(),
+            date: callDuration.date,
+          },
+          activeChatHistory: activeChatHistory || [],
+        };
+        socket.emit("sendChat", chatHistory);
+      }
     }
   };
 
@@ -333,14 +402,16 @@ export default function Home() {
   };
 
   return (
-    <div className={`flex  overflow-hidden h-screen w-screen `}>
-      {!activeChatUser ? (
+    <div className={`flex overflow-hidden h-screen w-screen `}>
+      {/* {!activeChatUser ? ( */}
+      {!activeUserChat ? (
         <div
           ref={helloRef}
-          className="duration-500 ease-out flex-col w-full h-full flex items-center text-[3.5rem] lg:text-[8rem] justify-center absolute z-[100]"
+          className="duration-500 ease-out flex-col w-full h-full flex items-center text-[3.5rem] lg:text-[5rem] justify-center absolute z-[100]"
         >
           <h2 className="flex-row flex items-end leading-none gap-2">
-            Fetching <Bone className="bone delay-0" />
+            Fetching
+            <Bone className="bone delay-0" />
             <Bone className=" bone delay-300" />
             <Bone className="bone delay-500" />
           </h2>
@@ -349,8 +420,9 @@ export default function Home() {
         <>
           <ChatSidebar
             allUsers={allUsers}
-            userChats={userChats as User[]}
-            activeChatUserID={activeChatUser?.id as string}
+            userChats={userChats?.map((userChat) => userChat.user) as User[]}
+            // activeChatUserID={activeChatUser.user?.id as string}
+            activeChatUserID={activeUserChat.user?.id as string}
             handleSetActiveChat={handleSetActiveChat}
             handleNewChat={handleNewChat}
             handleNewChatClose={handleNewChatClose}
@@ -377,20 +449,20 @@ export default function Home() {
               />
             )}
 
-            <ChatBanner activeChatUser={activeChatUser as User} />
+            <ChatBanner activeChatUser={activeUserChat?.user as User} />
 
-            <div className="w-full  flex-1  mx-auto flex flex-col relative bg-[#eee] dark:bg-[#07101f]">
+            <div className="w-full  flex-1 mx-auto flex flex-col relative bg-[#eee] dark:bg-[#141a35]">
               <div
                 ref={helloRef}
-                className=" duration-500 ease-out flex-col w-full h-full flex items-center text-[5rem] lg:text-[8rem] justify-center absolute z-[100]"
+                className=" bg-white dark:bg-slate-950 duration-500 ease-out flex-col w-full h-full flex items-center text-[5rem] lg:text-[8rem] justify-center absolute z-[10]"
               >
                 Helllow
               </div>
 
               {!isLoading && (
                 <>
-                  {/* chat header */}
-                  <div className=" bg-white shadow  dark:bg-slate-950 px-[20%] min-h-[13.8%] flex items-center justify-between   z-20 absolute w-full border-b backdrop-blur-md">
+                  {/* chat header  bg-slate-500 bg-opacity-10 */}
+                  <div className=" bg-white shadow  dark:bg-slate-950 px-[25%] min-h-[13.6%] flex items-center justify-between   z-20 absolute w-full   backdrop-blur-md">
                     {isNewChat ? (
                       <div className="w-full flex gap-3">
                         <Button
@@ -409,7 +481,7 @@ export default function Home() {
                         />
                       </div>
                     ) : (
-                      <div className="flex w-full justify-between items-center">
+                      <div className="flex w-full justify-between items-center px-4">
                         <div className="flex gap-5 items-center">
                           <Avatar className="h-10 w-10 cursor-pointer">
                             <Image
@@ -417,11 +489,11 @@ export default function Home() {
                               height={300}
                               width={300}
                               className="aspect-square h-full w-full"
-                              src={activeChatUser.avatar?.img as StaticImageData}
+                              src={activeUserChat.user.avatar?.img as StaticImageData}
                             />
-                            <AvatarFallback>{activeChatUser.username[0]}</AvatarFallback>
+                            <AvatarFallback>{activeUserChat.user.username[0]}</AvatarFallback>
                           </Avatar>
-                          <CardTitle className="text-3xl">{activeChatUser.username}</CardTitle>
+                          <CardTitle className="text-3xl">{activeUserChat.user.username}</CardTitle>
                         </div>
                         <div className="flex gap-4 items-center">
                           {isVideoCallRinging && (
@@ -429,10 +501,10 @@ export default function Home() {
                               Ringing <Loader className="animate-spin " />
                             </>
                           )}
-                          {activeChatUser.username !== "TacoDog" &&
+                          {activeUserChat.user.username !== "TacoDog" &&
                             (showCamera ? (
                               <VideoOff
-                                onClick={handleVideoCallEnd}
+                                onClick={() => handleVideoCallEnd()}
                                 size={iconSize}
                                 className="cursor-pointer"
                               />
@@ -453,7 +525,7 @@ export default function Home() {
                   {/* chat body */}
                   <div
                     ref={messageContainerRef}
-                    className=" flex pb-0 p-5 px-[20%] gap-5 h-full items-center justify-end scrollbar scroll-smooth flex-col overflow-y-scroll"
+                    className=" flex pb-0 p-5 px-[25%] w-full  mx-auto gap-5 h-full items-center justify-center scrollbar scroll-smooth flex-col overflow-y-scroll"
                   >
                     {/* camera */}
                     {showCamera ? (
@@ -462,31 +534,31 @@ export default function Home() {
                         autoPlay
                         playsInline
                         controls={false}
-                        className="z-[100] h-4/5 mb-5  aspect-video relative "
+                        className="z-[100] mt-[8%]  aspect-video  "
                       />
                     ) : (
-                      <div className="h-[32rem] w-full flex flex-col gap-5  ">
-                        {activeChatHistory && currentUser ? (
+                      <div className="h-[32rem] w-[85%] flex flex-col gap-5 px-3  ">
+                        {activeUserChat.chats && currentUser ? (
                           <ChatMessages
-                            activeChatHistory={activeChatHistory}
+                            activeChatHistory={activeUserChat.chats}
                             currentUser={currentUser}
-                            activeChatUser={activeChatUser}
+                            activeChatUser={activeUserChat.user}
                           />
                         ) : (
-                          <CardDescription className="h-full text-[#3b4f72] text-center w-full flex text-lg gap-2 flex-col justify-center items-center">
+                          <CardDescription className="h-full text-muted-secondary/40  text-center w-full flex text-base  flex-col justify-center items-center">
                             <Image
                               src={TacoDogLogo.src}
                               alt="tacodog logo"
                               width={300}
                               height={300}
-                              className=" h-40 w-40 grayscale opacity-20"
+                              className=" w-32 aspect-square grayscale opacity-[.15]"
                             />
-                            <span className="text-xl leading-none">
+                            <span className=" leading-tight">
                               Start your new chat by
                               <br />
-                              <span className="text-lg">pinging TacoDog with &quot;@t&quot;</span>
+                              <span>pinging TacoDog with &quot;@t&quot;</span>
                             </span>
-                            <span className="text-sm  ">Woof!</span>
+                            <span>Woof!</span>
                           </CardDescription>
                         )}
                       </div>
@@ -494,8 +566,8 @@ export default function Home() {
                   </div>
 
                   {/* chat input */}
-                  <div className="bg-white dark:bg-slate-950 px-[20%] bottom-[15.9%] h-[1.3rem] z-50  absolute w-full border-t backdrop-blur-lg "></div>
-                  <div className="bg-white dark:bg-slate-950 px-[20%] relative bottom-0 overflow-hidden h-[19%] flex gap-2 w-full  justify-center  mx-auto ">
+                  <div className="bg-white dark:bg-slate-950 px-[25%] bottom-[15.9%] h-[1.3rem] z-[40]  absolute w-full border-t backdrop-blur-lg "></div>
+                  <div className="bg-white dark:bg-slate-950 px-[25%] relative bottom-0 overflow-hidden h-[19%] flex gap-2 w-full  justify-center  mx-auto ">
                     <span
                       ref={chatMessageRef}
                       onFocus={() => handleFocus()}

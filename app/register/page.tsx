@@ -25,12 +25,6 @@ export default function Home() {
   const [formData, setFormData] = useState<User>({ id: "", username: "", password: "" });
   const [confirmPassword, setConfirmPassword] = useState<String>("");
 
-  useEffect(() => {
-    if (session && session.user) {
-      router.push("/chat");
-    }
-  }, [session, router]);
-
   //confirm password and password validation
   useEffect(() => {
     if (mode.match("Sign Up")) {
@@ -102,10 +96,15 @@ export default function Home() {
     if (formData.username && formData.password && confirmPassword) {
       setIsLoading(true);
       registerUser(formData)
-        .then(() => {
-          toast("Registration Successful!");
-          setMode("Sign In");
-          setIsLoading(false);
+        .then((response) => {
+          if (response.error) {
+            setIsError({ show: true, message: response.error });
+            setIsLoading(false);
+          } else {
+            toast("Registration Successful!");
+            setMode("Sign In");
+            setIsLoading(false);
+          }
         })
         .catch((error) => {
           setIsError({ show: true, message: error.message });

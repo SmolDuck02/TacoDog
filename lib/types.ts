@@ -15,6 +15,10 @@ export interface Chat {
 export interface ChatHistory {
   senderID: string;
   chatMessage: string;
+  date: Date;
+  type?: string;
+  start?: number;
+  end?: number;
 }
 export interface RegistrationError {
   show: boolean;

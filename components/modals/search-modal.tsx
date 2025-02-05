@@ -14,7 +14,7 @@ export default function SearchModal(props: SearchModalProps) {
     <div
       id="searchModal"
       // showSearchModalMini  ? "w-[100%] -left-[50%] translate-x-1/2"
-      className={`top-[27%] shadow-md rounded  p-3 gap-2 z-[40] flex flex-col bg-white dark:bg-slate-950 scrollbar  h-[30%] overflow-auto absolute w-full lg:w-[58%]  left-1/2 -translate-x-1/2`}
+      className={`top-[25%] text-muted-foreground shadow-md rounded ml-8 p-3 gap-2 z-[40] flex flex-col bg-white dark:bg-slate-950 scrollbar  h-[30%] overflow-auto absolute w-full lg:w-[48%]  left-1/2 -translate-x-1/2`}
       tabIndex={-1} // Makes the div focusable
     >
       {searchText == "" && "People you might know"}

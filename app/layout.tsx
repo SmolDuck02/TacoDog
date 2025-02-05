@@ -1,11 +1,12 @@
 import AuthProvider from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Mulish } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
+const mulish = Mulish({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "TacoDog",
@@ -23,7 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <AuthProvider>
-        <body className={`${inter.className} text-[var(--color)]`}>
+        <body className={`${mulish.className} text-[var(--color)]`}>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"

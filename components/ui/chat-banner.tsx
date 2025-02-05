@@ -1,12 +1,12 @@
 import { User } from "@/lib/types";
-import { defaultBanner } from "@/lib/utils";
+import defaultBanner from "@/public/bg/defaultBG.avif";
 import Image from "next/image";
 export default function ChatBanner({ activeChatUser }: { activeChatUser: User }) {
   return (
-    <div className="relative border-b justify-end items-end w-full p-6  min-h-[13.1%] flex text-[10px] lg:text-xs ">
+    <div className="z-[20] relative border-b justify-end items-end w-full p-6  min-h-[13.1%] flex text-[10px] lg:text-xs ">
       <Image
         fill
-        src={activeChatUser?.banner?.img || defaultBanner}
+        src={activeChatUser?.banner?.img || defaultBanner.src}
         className=" object-cover brightness-95"
         alt="user banner"
       />

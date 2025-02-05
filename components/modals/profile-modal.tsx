@@ -38,11 +38,11 @@ export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
           </span>
         </div>
       </PopoverTrigger>
-      <PopoverContent className={` p-0 w-[20rem] sm:max-w-[425px]`}>
+      <PopoverContent className={`mb-2 ml-0 p-0 pb-3 w-[20rem] sm:max-w-[425px]`}>
         {/* profile menu component */}
 
         <DialogHeader>
-          <div className={` relative border-b border-gray-400  w-full h-16  text-4xl `}>
+          <div className={`relative border-b border-gray-400  w-full h-16  text-4xl `}>
             <Image
               src={user?.banner?.img || defaultBanner.src}
               alt="User Banner"

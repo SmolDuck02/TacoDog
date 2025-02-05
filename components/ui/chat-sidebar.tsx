@@ -63,27 +63,25 @@ export default function ChatSidebar(props: ChatSidebarProps) {
 
   return (
     <div
-      className={` relative h-screen  max-w-[17rem] border border-l-0 ${
-        isChatSidebar ? "w-full z-[40] shadow-lg" : "w-[5rem]"
+      className={` z-[49] backdrop-blur-xl bg-white/20 dark:bg-slate-950/10  h-screen absolute left-0  max-w-[17rem]  ${
+        isChatSidebar ? "w-full shadow-2xl brightness-125 " : "w-[5rem]"
       } `}
     >
       <div className="w-full  h-full flex flex-col">
         <CardTitle
-          className={`p-2 border-b h-[13%] flex items-end text-5xl  ${
-            isChatSidebar ? "justify-start" : "justify-center"
+          className={`p-3 drop-shadow-lg h-[13%] text-black dark:text-[#ddd]  flex items-end text-5xl  ${
+            isChatSidebar ? "justify-start px-6" : "justify-center"
           } `}
         >
-          <span>{isChatSidebar ? "/tacodog" : "/t"}</span>
+          <span>{isChatSidebar ? "\\tacodog" : "\\t"}</span>
         </CardTitle>
 
         <div
-          className={`flex flex-col ${
-            !isChatSidebar && "shadow z-[10]"
-          }  h-[12%] border-b gap-3 items-center p-3`}
+          className={` flex flex-col h-[12%] shadow gap-2  z-[10] text-muted-foreground justify-center items-center p-3 px-[18px]    `}
         >
           <div
-            className={`text-lg  relative flex w-full items-center  ${
-              isChatSidebar ? "justify-between" : "justify-center"
+            className={`text-2xl px-1 relative flex w-full items-center  ${
+              isChatSidebar ? "justify-between text-[#222] dark:text-[#bbb] " : "justify-center"
             } `}
           >
             {isChatSidebar && <span className={`flex relative bottom-[-0.3rem]`}>Chats</span>}
@@ -91,10 +89,10 @@ export default function ChatSidebar(props: ChatSidebarProps) {
           </div>
 
           {isChatSidebar ? (
-            <div className="relative flex gap-2 w-full justify-end items-center">
+            <div className="relative  flex gap-2 w-full justify-end items-center">
               <Input
                 ref={searchRef}
-                className={`pr-8`}
+                className={` placeholder:text-muted-foreground/70 dark:bg-white/10 bg-black/10 pr-8`}
                 onFocus={handleNewChatClose}
                 placeholder="Find people..."
                 value={filter || ""}
@@ -124,21 +122,26 @@ export default function ChatSidebar(props: ChatSidebarProps) {
         {/* user chats */}
         <div
           tabIndex={-1}
-          className={`  flex-1 bg-[#eee] dark:bg-[#07101f] py-2 flex w-full scrollbar overflow-auto flex-col gap-4 px-3`}
+          // #07101f
+          className={` flex-1 gap-2 py-2 flex w-full scrollbar overflow-auto flex-col px-3`}
         >
           {filteredUsers ? (
             filteredUsers.map((user: User, index: number) => (
               <div
                 onClick={() => handleSetActiveChat(user?.id)}
                 key={index}
-                className={`flex gap-3 hover:cursor-pointer p-2   rounded items-center  w-full ${
+                className={`flex gap-3 hover:cursor-pointer p-2 px-[10px]   rounded items-center  w-full ${
                   isChatSidebar ? " justify-start" : "justify-center"
-                } ${activeChatUserID == user?.id ? "font-bold " : "brightness-[.4] font-light"} `}
+                } ${
+                  !filter && activeChatUserID == user?.id
+                    ? `font-bold ${!isChatSidebar ? "brightness-125" : "brightness-90"} backdrop-blur-xl `
+                    : "brightness-[.5] font-light"
+                } `}
               >
+                {/* 
                 {activeChatUserID == user?.id && (
-                  <div className="absolute bg-white dark:bg-slate-950 border border-l-0 shadow left-0 rounded-e-full w-[90%] h-14 p-3" />
-                )}
-
+                  <div className=" absolute dark:bg-white/20 bg-slate-950 backdrop-blur-xl  shadow  left-0 rounded-e-full w-full h-12 p-3" />
+                )} */}
                 <Avatar className="h-9 w-9 ">
                   <Image
                     alt="User Avatar"
@@ -149,21 +152,18 @@ export default function ChatSidebar(props: ChatSidebarProps) {
                   />
                   {/* <AvatarFallback>{user?.username[0] || ""}</AvatarFallback> */}
                 </Avatar>
-                {isChatSidebar && (
-                  <CardTitle className="z-[10] text-lg">{user?.username}</CardTitle>
-                )}
+                {isChatSidebar && <span className="z-[10] text-lg">{user?.username}</span>}
               </div>
             ))
           ) : (
-            <div className="py-3 text-slate-500 text-center w-full">No People Found.</div>
+            <div className="py-3 text-muted-foreground text-center w-full">No People Found.</div>
           )}
         </div>
 
         {/* profile header */}
         <div
-          className={` ${isChatSidebar ? "flex-row" : "flex-col h-32"}
-            ${!isAccountSidebar && "p-2"}
-          border-t-2 flex justify-center items-center  gap-1`}
+          className={` ${isChatSidebar ? "flex-row  items-start" : "flex-col items-center"}
+           flex justify-start   gap-1 p-2 px-[14px]  h-32`}
         >
           <ProfileModal isChatSidebar={isChatSidebar as boolean} />
 

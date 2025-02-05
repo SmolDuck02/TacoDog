@@ -129,6 +129,7 @@ export default function Home() {
         });
 
         console.log("response", response);
+        if(response && response.url) router.push(response.url)
         const { error } = response as { error: string };
         if (error) {
           setIsError({ show: true, message: error });

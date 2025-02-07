@@ -4,9 +4,10 @@
 import { ChatHistory, User } from "../types";
 import { avatars, banners, redis } from "../utils";
 const bcrypt = require("bcrypt");
+
 export async function saveProfileChanges(user: User) {
-  const updatedUser = await redis.set(`user:${user.username}`, user);
-  console.log(updatedUser);
+  const status = await redis.set(`user:${user.id}`, user);
+  console.log("Update profile is ", status);
 }
 
 export async function registerUser(formData: User) {

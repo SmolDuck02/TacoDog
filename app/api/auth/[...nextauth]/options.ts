@@ -20,15 +20,15 @@ export const options: NextAuthOptions = {
           if (mode === "update") {
             return JSON.parse(formData) as User;
           } else {
-            // let user = await redis.get(`user:${username}`);
             let users = await redis.keys(`user:*`);
-            let user;
-            if (users.length > 0) {
-              const values: User[] = await redis.mget(...users);
-              user = values.find((value) => {
-                return value.username == username;
-              });
-            }
+
+            if (users.length == 0) throw new Error("No users in the database");
+
+            const values: User[] = await redis.mget(...users);
+            const user = values.find((value) => {
+              return value.username == username;
+            });
+
             console.log("Found Username match", user?.username);
 
             if (!user) {

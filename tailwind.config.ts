@@ -47,7 +47,7 @@ const config = {
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
-          secondary: "hsl(var(--muted-foreground) / <alpha-value>)"
+          secondary: "hsl(var(--muted-foreground) / <alpha-value>)",
         },
         accent: {
           DEFAULT: "hsl(var(--accent))",
@@ -81,9 +81,15 @@ const config = {
           "12%": { transform: " scale(1.2)" },
           "24%, 100%": { transform: " scale(1)" },
         },
+        typing: {
+          "0%": { transform: "translateY(0px)" },
+          "12%": { transform: "translateY(-3px)" },
+          "24%, 100%": { transform: "translateY(0px)" },
+        },
       },
       animation: {
         pop: "pop-spin 1.5s ease-out infinite",
+        typing: "typing 1.5s ease-out infinite",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },

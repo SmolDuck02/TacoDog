@@ -1,6 +1,6 @@
 "use client";
 
-import { User } from "@/lib/types";
+import { ChatHistory, User, UserChat } from "@/lib/types";
 import { iconSize, iconSizeSmall } from "@/lib/utils";
 import defaultAvatar from "@/public/avatars/defaultAvatar.png";
 import { Columns2, Search, SquarePen, X } from "lucide-react";
@@ -13,7 +13,7 @@ import { Input } from "./input";
 
 interface ChatSidebarProps {
   allUsers: User[];
-  userChats: User[];
+  userChats: UserChat[];
   activeChatUserID: string;
   handleSetActiveChat: (id: string) => void;
   handleNewChat: () => void;
@@ -30,7 +30,7 @@ export default function ChatSidebar(props: ChatSidebarProps) {
   } = props;
   const [isChatSidebar, setIsChatSidebar] = useState<false | true | "search" | "column">(false);
   const [isAccountSidebar, setAccountSidebar] = useState(false);
-  const [filteredUsers, setFilteredUsers] = useState<User[] | null>(userChats);
+  const [filteredUsers, setFilteredUsers] = useState<UserChat[] | User[] | null>(userChats);
   const [filter, setFilter] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
 
@@ -123,44 +123,75 @@ export default function ChatSidebar(props: ChatSidebarProps) {
         <div
           tabIndex={-1}
           // #07101f
-          className={` flex-1 gap-2 py-2 flex w-full scrollbar overflow-auto flex-col px-3`}
+          className={` flex-1 gap-2 pt-4 flex w-full scrollbar overflow-auto flex-col px-3`}
         >
           {filteredUsers ? (
-            filteredUsers.map((user: User, index: number) => (
-              <div
-                onClick={() => handleSetActiveChat(user?.id)}
-                key={index}
-                className={`flex gap-3 hover:cursor-pointer p-2 px-[10px]   rounded items-center  w-full ${
-                  isChatSidebar ? " justify-start" : "justify-center"
-                } ${
-                  !filter && activeChatUserID == user?.id
-                    ? `font-bold ${!isChatSidebar ? "brightness-125" : "brightness-90"} backdrop-blur-xl `
-                    : "brightness-[.5] font-light"
-                } `}
-              >
-                {/* 
+            filteredUsers.map((userChat, index: number) => {
+              const user: User = (userChat as UserChat).user
+                ? (userChat as UserChat).user
+                : (userChat as User);
+              const chats = (userChat as UserChat).chats;
+              const hasUnreadMessage =
+                chats && chats.length > 0 ? ([...chats].pop() as ChatHistory) : null;
+              const callMessage =
+                (hasUnreadMessage?.senderID == activeChatUserID ? user.username : "You") +
+                " Called";
+              const chatMessage =
+                hasUnreadMessage?.senderID == user.id
+                  ? hasUnreadMessage?.chatMessage
+                  : `You: ${hasUnreadMessage?.chatMessage}`;
+              return (
+                <div key={index} className="relative flex items-center">
+                  {hasUnreadMessage?.isSeen && (
+                    <span className="bg-amber-500 z-10 absolute right-[8%] w-2 h-2 aspect-square rounded-full" />
+                  )}
+                  <div
+                    onClick={() => handleSetActiveChat(user?.id)}
+                    className={`flex gap-3 hover:cursor-pointer p-2 px-[10px]   rounded items-center  w-full ${
+                      isChatSidebar ? " justify-start" : "justify-center"
+                    } ${
+                      !filter && activeChatUserID == user?.id
+                        ? `font-bold ${
+                            !isChatSidebar ? "brightness-125" : "brightness-90"
+                          } backdrop-blur-xl `
+                        : "brightness-[.5] font-light"
+                    } `}
+                  >
+                    {/* 
                 {activeChatUserID == user?.id && (
                   <div className=" absolute dark:bg-white/20 bg-slate-950 backdrop-blur-xl  shadow  left-0 rounded-e-full w-full h-12 p-3" />
                 )} */}
-                <Avatar className="h-9 w-9 ">
-                  <Image
-                    alt="User Avatar"
-                    height={300}
-                    width={300}
-                    className="aspect-square h-full w-full"
-                    src={user?.avatar?.img || defaultAvatar}
-                  />
-                  {/* <AvatarFallback>{user?.username[0] || ""}</AvatarFallback> */}
-                </Avatar>
-                {isChatSidebar && <span className="z-[10] text-lg">{user?.username}</span>}
-              </div>
-            ))
+                    <Avatar className="h-9 w-9 ">
+                      <Image
+                        alt="User Avatar"
+                        height={300}
+                        width={300}
+                        className="aspect-square h-full w-full"
+                        src={user?.avatar?.img || defaultAvatar}
+                      />
+                      {/* <AvatarFallback>{user?.username[0] || ""}</AvatarFallback> */}
+                    </Avatar>
+                    <span className="flex flex-col">
+                      {isChatSidebar && <span className="z-[10] text-md">{user?.username}</span>}
+                      <span
+                        className={`text-xs text-muted-foreground ${
+                          hasUnreadMessage?.isSeen ? "font-bold" : "font-light"
+                        } ${hasUnreadMessage?.chatMessage ? "" : "italic"}  `}
+                      >
+                        {isChatSidebar &&
+                          (hasUnreadMessage?.chatMessage ? chatMessage : callMessage)}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              );
+            })
           ) : (
             <div className="py-3 text-muted-foreground text-center w-full">No People Found.</div>
           )}
         </div>
 
-        {/* profile header */}
+        {/* profile modal button */}
         <div
           className={` ${isChatSidebar ? "flex-row  items-start" : "flex-col items-center"}
            flex justify-start   gap-1 p-2 px-[14px]  h-32`}

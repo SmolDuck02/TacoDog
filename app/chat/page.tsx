@@ -10,30 +10,24 @@ import ChatSidebar from "@/components/ui/chat-sidebar";
 import { Input } from "@/components/ui/input";
 import { askTacoDog, getAllUsers, getUserChats } from "@/lib/api";
 import { socket } from "@/lib/socketClient";
-import { ChatHistory, User } from "@/lib/types";
+import { ChatHistory, User, UserChat } from "@/lib/types";
 import { iconSize, initializeCamera, TacoDog } from "@/lib/utils";
 import TacoDogLogo from "@/public/logo.png";
 import { Bone, Loader, Video, VideoOff } from "lucide-react";
-import { signIn, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import Image, { StaticImageData } from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-interface UserChat {
-  user: User;
-  chats: ChatHistory[] | null;
-}
-export default function Home() {
+export default function Chat() {
   const router = useRouter();
-  const { data: session } = useSession();
-
+  const session = useSession();
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userChats, setUserChats] = useState<UserChat[] | null>(null);
   const [activeUserChat, setActiveUserChat] = useState<UserChat | null>(null);
   const [chatUsersID, setChatUsersID] = useState<string | null>();
   const [searchText, setSearchText] = useState("");
-  // const [activeChatUser, setActiveChatUser] = useState<User | null>(null);
   const [activeChatHistory, setActiveChatHistory] = useState<ChatHistory[] | null>(null);
   const [chatMessage, setChatMessage] = useState<string | null>();
   const [isNewChat, setIsNewChat] = useState(false);
@@ -50,9 +44,13 @@ export default function Home() {
   const helloRef = useRef<HTMLDivElement | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const chatMessageRef = useRef<HTMLSpanElement>(null);
+  const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
-    if (session && session.user && !currentUser) setCurrentUser(session.user as User);
+    if (session.data && session.data.user && !currentUser) {
+      console.log(session);
+      setCurrentUser(session.data.user as User);
+    }
   }, [session, currentUser]);
 
   useEffect(() => {
@@ -75,7 +73,12 @@ export default function Home() {
             //   setActiveChatUser(response.find((user) => user.id == "0") as User);
             // });
 
-            getUserChats(id)
+            
+          }
+        })
+        .catch((error) => console.log("error fetching all users: ", error))
+        
+        getUserChats(id)
               .then((userChatsResponse) => {
                 if (userChatsResponse) {
                   setUserChats(
@@ -91,10 +94,9 @@ export default function Home() {
                   setActiveUserChat({ user: TacoDog, chats: null });
                 }
               })
-              .catch((error) => console.log("Error getting user chats: ", error));
-          }
-        })
-        .catch((error) => console.log("error fetching all users: ", error));
+              .catch((error) => console.log("Error getting user chats: ", error)).finally(() => console.log("dinejj"));
+
+
     }
   }, [currentUser]);
 
@@ -152,6 +154,7 @@ export default function Home() {
     socket.on(`acceptCall`, ({ callerID, receiverID }) => {
       console.log("call accepted caller", callerID);
       console.log("call accepted receiver", receiverID);
+
       if (receiverID == currentUser?.id) {
         handleSetActiveChat(callerID);
         setShowCamera(true);
@@ -167,13 +170,41 @@ export default function Home() {
       handleVideoCallEnd(false);
     });
 
+    socket.on(`typing:${currentUser?.id}`, () => {
+      setIsTyping(!isTyping);
+    });
+
     return () => {
       socket.off(`receiveChat:${chatUsersID}`);
       socket.off(`receiveCall:${currentUser?.id}`);
       socket.off(`acceptCall`);
       socket.off(`rejectCall:${currentUser?.id}`);
+      socket.off(`typing:${currentUser?.id}`);
     };
   });
+
+  const updateChat = (newChat: ChatHistory) => {
+    console.log("ppp", newChat)
+    if (
+      userChats &&
+      activeUserChat &&
+      !userChats.find((userChat) => userChat.user.id == activeUserChat.user.id)
+    ) {
+      userChats.splice(0, 0, { user: activeUserChat.user, chats: [newChat] });
+    } else if (userChats && activeUserChat) {
+      const index = userChats.indexOf(activeUserChat);
+      const updated = [...userChats];
+      // const updated = [...userChats].splice(index, 1);
+      // updated.splice(0, 0, activeUserChat);
+      if (index > 0) {
+        updated.splice(index, 1);
+        updated.splice(0, 0, activeUserChat);
+      }
+      if (updated[0].chats) updated[0].chats?.push(newChat);
+      console.log("grgr", updated)
+      setUserChats(updated);
+    }
+  };
 
   useEffect(() => {
     if (videoRef.current) initializeCamera(videoRef.current);
@@ -195,23 +226,8 @@ export default function Home() {
       // if (chatUsers && !chatUsers.find((user) => user.id == activeChatUser.id)) {
       //   chatUsers.push(activeChatUser);
       // }
-      if (
-        userChats &&
-        activeUserChat &&
-        !userChats.find((userChat) => userChat.user.id == activeUserChat.user.id)
-      ) {
-        userChats.splice(0, 0, { user: activeUserChat.user, chats: [chatHistory.newChatMessage] });
-      } else if (userChats && activeUserChat) {
-        const index = userChats.indexOf(activeUserChat);
-        const updated = [...userChats];
-        // const updated = [...userChats].splice(index, 1);
-        // updated.splice(0, 0, activeUserChat);
-        if (index > 0) {
-          updated.splice(index, 1);
-          updated.splice(0, 0, activeUserChat);
-          setUserChats(updated);
-        }
-      }
+      //for ui update of recent chats
+      updateChat(chatHistory.newChatMessage);
 
       //user input
       socket.emit("sendChat", chatHistory);
@@ -269,20 +285,20 @@ export default function Home() {
   };
 
   useEffect(() => {
-     if (messageContainerRef.current) {
+    if (messageContainerRef.current) {
       const height = messageContainerRef.current.scrollHeight - 630;
-      
+
       //double scrollTo due to sequence the scrollTo:instant in the useEffect below this
       messageContainerRef.current.scrollTo({
         top: height,
         behavior: "instant",
       });
 
-       messageContainerRef.current.scrollTo({
-         top: messageContainerRef.current.scrollHeight,
-         behavior: "smooth",
-       });
-     }
+      messageContainerRef.current.scrollTo({
+        top: messageContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
   }, [activeUserChat?.chats]);
 
   useEffect(() => {
@@ -307,12 +323,16 @@ export default function Home() {
     if (chatMessageRef.current && !chatMessage) {
       chatMessageRef.current.textContent = "";
       setChatMessage("");
+
+      if (activeUserChat) socket.emit("typing", activeUserChat.user.id);
     }
   };
 
   const handleBlur = () => {
     if (chatMessageRef.current && !chatMessage) {
       chatMessageRef.current.textContent = "Enter message...";
+
+      if (activeUserChat) socket.emit("typing", activeUserChat.user.id);
     }
   };
 
@@ -362,17 +382,21 @@ export default function Home() {
       socket.emit("rejectCall", activeUserChat?.user?.id);
       // socket.emit("rejectCall", activeChatUser?.id);
 
-      if (callDuration) {
+      if (callDuration && activeUserChat) {
         const chatHistory = {
           chatUsersID: chatUsersID,
           newChatMessage: {
             type: "call",
+            senderID: activeUserChat.user.id,
             start: callDuration.start,
             end: new Date().getTime(),
             date: callDuration.date,
           },
           activeChatHistory: activeChatHistory || [],
         };
+        
+        updateChat(chatHistory.newChatMessage);
+
         socket.emit("sendChat", chatHistory);
       }
     }
@@ -420,7 +444,7 @@ export default function Home() {
         <>
           <ChatSidebar
             allUsers={allUsers}
-            userChats={userChats?.map((userChat) => userChat.user) as User[]}
+            userChats={userChats as UserChat[]}
             // activeChatUserID={activeChatUser.user?.id as string}
             activeChatUserID={activeUserChat.user?.id as string}
             handleSetActiveChat={handleSetActiveChat}
@@ -539,11 +563,25 @@ export default function Home() {
                     ) : (
                       <div className="h-[32rem] w-[85%] flex flex-col gap-5 px-3  ">
                         {activeUserChat.chats && currentUser ? (
-                          <ChatMessages
-                            activeChatHistory={activeUserChat.chats}
-                            currentUser={currentUser}
-                            activeChatUser={activeUserChat.user}
-                          />
+                          <>
+                            {true && (
+                              <Avatar className="absolute mb-1 z-0">
+                                <Image
+                                  src={activeUserChat.user.avatar?.img as StaticImageData}
+                                  alt="User Avatar"
+                                  height={300}
+                                  width={300}
+                                  className="aspect-square h-5 w-5"
+                                />
+                                {/* <AvatarFallback>{activeChatUser.username[0]}</AvatarFallback> */}
+                              </Avatar>
+                            )}
+                            <ChatMessages
+                              activeChatHistory={activeUserChat.chats}
+                              currentUser={currentUser}
+                              activeChatUser={activeUserChat.user}
+                            />
+                          </>
                         ) : (
                           <CardDescription className="h-full text-muted-secondary/40  text-center w-full flex text-base  flex-col justify-center items-center">
                             <Image
@@ -564,6 +602,14 @@ export default function Home() {
                       </div>
                     )}
                   </div>
+                  {isTyping && (
+                    <div className="duration-500 ease-in-out text-muted-secondary/40 absolute bottom-[20%] w-fit flex gap-0 left-1/2 -translate-x-1/2 z-100">
+                      {activeUserChat.user.username} is typing
+                      <span className="animate-typing delay-0 ">.</span>
+                      <span className="animate-typing  delay-300">.</span>
+                      <span className="animate-typing  delay-500">.</span>
+                    </div>
+                  )}
 
                   {/* chat input */}
                   <div className="bg-white dark:bg-slate-950 px-[25%] bottom-[15.9%] h-[1.3rem] z-[40]  absolute w-full border-t backdrop-blur-lg "></div>
@@ -575,8 +621,8 @@ export default function Home() {
                       onInput={(e) => setChatMessage((e.target as HTMLElement).textContent)}
                       contentEditable
                       className={`${
-                        chatMessage ? "text-white" : "text-slate-500"
-                      } max-h-28 px-4 h-fit py-2 overflow-y-auto scrollbar  items-center inline-flex rounded border-2   w-full textarea`}
+                        chatMessage ? "text-white" : "text-muted-secondary/40"
+                      } max-h-28 px-4 h-fit py-2 overflow-y-auto scrollbar items-center inline-flex rounded border-2   w-full textarea`}
                       role="textbox"
                       onKeyDown={handleSendMessage}
                     />

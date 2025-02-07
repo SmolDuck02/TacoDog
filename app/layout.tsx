@@ -1,8 +1,10 @@
 import AuthProvider from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import type { Metadata } from "next";
+import { getServerSession } from "next-auth";
 import { Inter, Mulish } from "next/font/google";
 import { Toaster } from "sonner";
+import { options } from "./api/auth/[...nextauth]/options";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -16,14 +18,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getServerSession(options);
+
   return (
     <html lang="en" suppressHydrationWarning={true}>
-      <AuthProvider>
+      <AuthProvider session={session}>
         <body className={`${mulish.className} text-[var(--color)]`}>
           <ThemeProvider
             attribute="class"

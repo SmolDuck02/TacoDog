@@ -12,13 +12,18 @@ export interface Chat {
   time?: string;
 }
 
+export interface UserChat {
+  user: User;
+  chats: ChatHistory[] | null;
+}
 export interface ChatHistory {
   senderID: string;
-  chatMessage: string;
+  chatMessage?: string;
   date: Date;
-  type?: string;
   start?: number;
   end?: number;
+  isSeen?: boolean;
+  isDelivered?: boolean;
 }
 export interface RegistrationError {
   show: boolean;

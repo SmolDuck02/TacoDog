@@ -14,9 +14,9 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export default function Home() {
+export default function Register() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const session = useSession();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isError, setIsError] = useState<RegistrationError>({ show: false });
@@ -129,7 +129,7 @@ export default function Home() {
         });
 
         console.log("response", response);
-        if(response && response.url) router.push(response.url)
+        if (response && response.url) router.push(response.url);
         const { error } = response as { error: string };
         if (error) {
           setIsError({ show: true, message: error });
@@ -160,7 +160,7 @@ export default function Home() {
   return (
     <main
       className={`${
-        status !== "loading" && !session?.user ? "flex flex-col lg:flex-row " : "hidden"
+        status !== "loading" && !session?.data?.user ? "flex flex-col lg:flex-row " : "hidden"
       } h-screen w-screen relative bg-[#eee] dark:bg-slate-950 justify-center items-center gap-10 overflow-hidden`}
     >
       {/* <div className="z-10  max-h-screen overflow-hidden hidden lg:flex flex-col items-end justify-center w-full absolute">

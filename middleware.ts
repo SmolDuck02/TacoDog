@@ -4,13 +4,11 @@ import { NextResponse } from "next/server";
 export function middleware(req: NextRequest) {
   const isAuthenticated = req.cookies.get("next-auth.session-token") || null;
   const pathname = req.nextUrl.pathname;
-  console.log("Request Cookies", req.cookies);
-
   if (!isAuthenticated && pathname == "/chat") {
     return NextResponse.redirect(new URL("/register", req.url));
   }
 
-  if ((isAuthenticated && pathname == "/register") || pathname == "/") {
+  if ((isAuthenticated && pathname == "/register")) {
     return NextResponse.redirect(new URL("/chat", req.url));
   }
 
@@ -18,5 +16,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/chat", "/register", "/api/:path*"], // Match "/api/*"
+  matcher: ["/chat", "/register"], // Match "/api/*"
 };

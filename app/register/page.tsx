@@ -303,7 +303,7 @@ export default function Register() {
 
       <div className=" bottom-0 lg:bottom-auto  w-full right-[-58%]  absolute ">
         <Image
-          src="/avatars/tacodog.png"
+          src="/avatars/tacoAvatar.png"
           alt="logo"
           height={500}
           width={500}

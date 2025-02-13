@@ -8,7 +8,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/register", req.url));
   }
 
-  if ((isAuthenticated && pathname == "/register")) {
+  if (isAuthenticated && pathname == "/register") {
     return NextResponse.redirect(new URL("/chat", req.url));
   }
 

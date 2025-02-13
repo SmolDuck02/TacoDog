@@ -100,11 +100,14 @@ export async function getUserChats(id: string) {
       return ids[0] == id ? ids[1] : ids[0];
     });
 
-    const users: User[] = (await Promise.all(
-      userIDs.map((id) => redis.get(`user:${id}`))
-    )) as User[];
+    const rawUsers: User[] = await redis.mget(...userIDs.map((id) => `user:${id}`));
 
-    // console.log("user chats: ", userIDs, userChats, keys);
+    const users = rawUsers.map((user, index) => ({
+      id: user.id,
+      username: user.username,
+      avatar: user.avatar,
+      banner: user.banner,
+    }));
 
     const userChats = users.map((user, index) => {
       return { user: user, chats: chats[index] };

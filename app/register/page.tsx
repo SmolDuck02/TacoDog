@@ -159,9 +159,8 @@ export default function Register() {
 
   return (
     <main
-      className={`${
-        status !== "loading" && !session?.data?.user ? "flex flex-col lg:flex-row " : "hidden"
-      } h-screen w-screen relative bg-[#eee] dark:bg-slate-950 justify-center items-center gap-10 overflow-hidden`}
+      className={` flex flex-col lg:flex-row
+      h-screen w-screen relative bg-[#eee] dark:bg-slate-950 justify-center items-center gap-10 overflow-hidden`}
     >
       {/* <div className="z-10  max-h-screen overflow-hidden hidden lg:flex flex-col items-end justify-center w-full absolute">
         <Image

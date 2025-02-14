@@ -1,7 +1,13 @@
 "use client";
 
-import { ChatHistory, User, UserChat } from "@/lib/types";
-import { iconSize, iconSizeSmall } from "@/lib/utils";
+import { User, UserChat } from "@/lib/types";
+import {
+  iconSize,
+  iconSizeSmall,
+  monthDateOptions,
+  timeOptions,
+  yearDateOptions,
+} from "@/lib/utils";
 import defaultAvatar from "@/public/avatars/defaultAvatar.png";
 import { Columns2, Search, SquarePen, X } from "lucide-react";
 import Image from "next/image";
@@ -14,16 +20,18 @@ import { Input } from "./input";
 interface ChatSidebarProps {
   allUsers: User[];
   userChats: UserChat[];
-  activeChatUserID: string;
+  currentUserID: string;
+  activeChatUser: User;
   handleSetActiveChat: (id: string) => void;
   handleNewChat: () => void;
   handleNewChatClose: () => void;
 }
 export default function ChatSidebar(props: ChatSidebarProps) {
   const {
+    currentUserID,
     allUsers,
     userChats,
-    activeChatUserID,
+    activeChatUser,
     handleSetActiveChat,
     handleNewChat,
     handleNewChatClose,
@@ -53,9 +61,14 @@ export default function ChatSidebar(props: ChatSidebarProps) {
   useEffect(() => {
     if (filter) {
       const filtered = allUsers.filter((user) =>
-        user.username.toLowerCase().includes(filter.toLowerCase())
+        user.username.toLowerCase().includes(filter.toLowerCase().trim())
       );
-      setFilteredUsers(filtered.length > 0 ? filtered : null);
+      const filteredUserChats = filtered.map((user) => {
+        const foundChat = userChats.find((userChat) => userChat.user.id === user.id);
+        return foundChat ? foundChat : { user: user, chats: null };
+      });
+      console.log("yyy", filtered, userChats, filteredUserChats);
+      setFilteredUsers(filteredUserChats.length > 0 ? filteredUserChats : null);
     } else {
       setFilteredUsers(userChats);
     }
@@ -130,37 +143,72 @@ export default function ChatSidebar(props: ChatSidebarProps) {
               const user: User = (userChat as UserChat).user
                 ? (userChat as UserChat).user
                 : (userChat as User);
-              const chats = (userChat as UserChat).chats;
-              const hasUnreadMessage =
-                chats && chats.length > 0 ? ([...chats].pop() as ChatHistory) : null;
-              const callMessage =
-                (hasUnreadMessage?.senderID == activeChatUserID ? user.username : "You") +
-                " Called";
-              const chatMessage =
-                hasUnreadMessage?.senderID == user.id
-                  ? hasUnreadMessage?.chatMessage
-                  : `You: ${hasUnreadMessage?.chatMessage}`;
+              const chats = (userChat as UserChat).chats || [];
+              const lastMessage = chats.at(-1);
+              const isAuthor = lastMessage?.senderID === currentUserID;
+              // console.log("heyhey", user, lastMessage, chats, filteredUsers);
+              const isActiveChat = activeChatUser.id === user?.id;
+              const callMessage = (isAuthor ? "You" : user.username) + " Called";
+              const chatMessage = isAuthor
+                ? `You: ${chats?.at(-1)?.chatMessage}`
+                : lastMessage?.chatMessage;
+
+              const d = new Date(lastMessage?.date || "");
+              const options =
+                d.getDate() == new Date().getDate()
+                  ? timeOptions
+                  : d.getFullYear() == new Date().getFullYear()
+                  ? monthDateOptions
+                  : yearDateOptions;
+
+              const date = new Date(lastMessage?.date || "").toLocaleString("en-US", options);
+
               return (
                 <div key={index} className="relative flex items-center">
-                  {hasUnreadMessage?.isSeen && (
-                    <span className="bg-amber-500 z-10 absolute right-[8%] w-2 h-2 aspect-square rounded-full" />
+                  {lastMessage && (
+                    <>
+                      {!lastMessage.isSeen && !isAuthor && (
+                        <span
+                          className={`bg-amber-400 z-10 absolute ${
+                            isChatSidebar ? "right-3" : "-right-1"
+                          } w-2 h-2 aspect-square rounded-full`}
+                        />
+                      )}
+                      {lastMessage.isSeen && isAuthor && (
+                        <div
+                          className={`${isChatSidebar && !filter ? "right-3 " : "hidden"} ${
+                            isActiveChat ? "brightness-125" : "brightness-50"
+                          } absolute h-4 w-4 `}
+                        >
+                          <Image
+                            alt="User Avatar"
+                            height={300}
+                            width={300}
+                            className="aspect-square rounded-full h-full w-full"
+                            src={activeChatUser?.avatar?.img || defaultAvatar}
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
+
                   <div
-                    onClick={() => handleSetActiveChat(user?.id)}
-                    className={`flex gap-3 hover:cursor-pointer p-2 px-[10px]   rounded items-center  w-full ${
+                    onClick={() => {
+                      handleSetActiveChat(user?.id);
+                      setFilter(null);
+                    }}
+                    className={`flex gap-3 hover:cursor-pointer p-2 px-[10px] rounded items-center  w-full ${
                       isChatSidebar ? " justify-start" : "justify-center"
                     } ${
-                      !filter && activeChatUserID == user?.id
+                      !filter &&
+                      (isActiveChat
                         ? `font-bold ${
+                            //condiitonal brightness because text become more brighter than image
                             !isChatSidebar ? "brightness-125" : "brightness-90"
                           } backdrop-blur-xl `
-                        : "brightness-[.5] font-light"
+                        : "brightness-[.5] font-light")
                     } `}
                   >
-                    {/* 
-                {activeChatUserID == user?.id && (
-                  <div className=" absolute dark:bg-white/20 bg-slate-950 backdrop-blur-xl  shadow  left-0 rounded-e-full w-full h-12 p-3" />
-                )} */}
                     <Avatar className="h-9 w-9 ">
                       <Image
                         alt="User Avatar"
@@ -169,19 +217,24 @@ export default function ChatSidebar(props: ChatSidebarProps) {
                         className="aspect-square h-full w-full"
                         src={user?.avatar?.img || defaultAvatar}
                       />
-                      {/* <AvatarFallback>{user?.username[0] || ""}</AvatarFallback> */}
                     </Avatar>
-                    <span className="flex flex-col">
-                      {isChatSidebar && <span className="z-[10] text-md">{user?.username}</span>}
-                      <span
-                        className={`text-xs text-muted-foreground ${
-                          hasUnreadMessage?.isSeen ? "font-bold" : "font-light"
-                        } ${hasUnreadMessage?.chatMessage ? "" : "italic"}  `}
-                      >
-                        {isChatSidebar &&
-                          (hasUnreadMessage?.chatMessage ? chatMessage : callMessage)}
+                    {isChatSidebar && (
+                      <span className="flex flex-col">
+                        <span className="z-[10] text-md">{user?.username}</span>
+                        {chats.length > 0 && (
+                          <span
+                            className={`text-xs text-muted-foreground flex gap-1 font-light ${
+                              lastMessage?.isSeen && "font-bold"
+                            } ${lastMessage?.chatMessage && "italic"} `}
+                          >
+                            <span className="truncate w-auto pr-1 max-w-24">
+                              {lastMessage?.chatMessage ? chatMessage : callMessage}
+                            </span>
+                            {date}
+                          </span>
+                        )}
                       </span>
-                    </span>
+                    )}
                   </div>
                 </div>
               );
@@ -194,14 +247,13 @@ export default function ChatSidebar(props: ChatSidebarProps) {
         {/* profile modal button */}
         <div
           className={` ${isChatSidebar ? "flex-row  items-start" : "flex-col items-center"}
-           flex justify-start   gap-1 p-2 px-[14px]  h-32`}
+           flex justify-start gap-1 p-2 px-[14px] h-32`}
         >
           <ProfileModal isChatSidebar={isChatSidebar as boolean} />
-
           {!isAccountSidebar && (
             <span
               onClick={toggleChatSidebar}
-              className="h-12 w-12 rounded-full p-3 hover:bg-muted  flex justify-center items-center cursor-pointer"
+              className="h-12 w-12 rounded-full p-3 hover:bg-muted flex justify-center items-center cursor-pointer"
             >
               <Columns2 size={iconSize} />
             </span>

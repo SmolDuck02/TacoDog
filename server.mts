@@ -17,7 +17,14 @@ app.prepare().then(() => {
     token: process.env.UPSTASH_REDIS_REST_TOKEN,
   });
   const httpServer = createServer(handler);
-  const io = new Server(httpServer, { connectionStateRecovery: {} });
+  const io = new Server(httpServer, {
+    connectionStateRecovery: {
+      // the backup duration of the sessions and the packets
+      maxDisconnectionDuration: 2 * 60 * 1000,
+      // whether to skip middlewares upon successful recovery
+      skipMiddlewares: true,
+    },
+  });
 
   io.on("connection", async (socket) => {
     // await redis.del(`chatHistory:116`);
@@ -25,15 +32,16 @@ app.prepare().then(() => {
     console.log(`A user connected: ${socket.id}`);
 
     socket.on("sendChat", async (data) => {
-      const { activeChatHistory, chatUsersID, newChatMessage } = data;
+      const { activeChatHistory, receiverID, newChatMessage } = data;
 
-      console.log("ChatMessage received:", chatUsersID, newChatMessage);
+      console.log("ChatMessage received:", receiverID, newChatMessage);
 
-      io.emit(`receiveChat:${chatUsersID}`, newChatMessage);
+      io.emit(`receiveChat:${receiverID}`, newChatMessage);
 
       activeChatHistory.push(newChatMessage);
 
-      await redis.set(`chatHistory:${chatUsersID}`, activeChatHistory);
+      // await redis.set(`chatHistory:${chatUsersID}`, activeChatHistory);
+      // cancel -- await redis.incr("chatCounter:${chatUsersID}");
       console.log(activeChatHistory, `Successfully pushed new chat to history`);
     });
 
@@ -46,6 +54,13 @@ app.prepare().then(() => {
     });
     socket.on(`rejectCall`, (callerID) => {
       io.emit(`rejectCall:${callerID}`);
+    });
+    socket.on("typing", ({ senderID, receiverID, state }) => {
+      io.emit(`typing:${receiverID}`, { senderID, state });
+    });
+
+    socket.on("seenChat", ({ senderID, index }) => {
+      io.emit(`seenChat:${senderID}`, index);
     });
 
     socket.on("disconnect", () => {

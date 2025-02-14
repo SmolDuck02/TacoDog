@@ -21,7 +21,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function Chat() {
   const router = useRouter();
-  const session = useSession();
+  const { data: session } = useSession();
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userChats, setUserChats] = useState<UserChat[] | null>(null);
@@ -44,25 +44,19 @@ export default function Chat() {
   const helloRef = useRef<HTMLDivElement | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const chatMessageRef = useRef<HTMLSpanElement>(null);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isTyping, setIsTyping] = useState<boolean>(false);
 
   useEffect(() => {
-    if (session.data && session.data.user && !currentUser) {
-      console.log(session);
-      setCurrentUser(session.data.user as User);
-    }
-  }, [session, currentUser]);
-
-  useEffect(() => {
-    if (currentUser) {
-      const id = currentUser.id;
-
+    if (!session || !session.user) return;
+    if (!currentUser) {
+      setCurrentUser(session.user as User);
+      const id = (session.user as User).id;
+      console.log("fetching");
       getAllUsers()
         .then((response) => {
           if (response) {
             setAllUsers(response); //whole user database
             setFilteredUsers(response); //meaning both the search filters and userChats with other users
-            setChatUsersID(`_0_${id}_`);
 
             // getActiveChatHistory(`_0_${id}_`).then((chatHistory) => {
             //   if (chatHistory) {
@@ -72,33 +66,33 @@ export default function Chat() {
             //   }
             //   setActiveChatUser(response.find((user) => user.id == "0") as User);
             // });
-
-            
           }
         })
         .catch((error) => console.log("error fetching all users: ", error))
-        
-        getUserChats(id)
-              .then((userChatsResponse) => {
-                if (userChatsResponse) {
-                  setUserChats(
-                    userChatsResponse.sort(
-                      (a, b) =>
-                        new Date(b.chats[b.chats.length - 1].date).getTime() -
-                        new Date(a.chats[a.chats.length - 1].date).getTime()
-                    )
-                  );
-                  setActiveUserChat(userChatsResponse[0]);
-                } else {
-                  setUserChats([{ user: TacoDog, chats: null }]);
-                  setActiveUserChat({ user: TacoDog, chats: null });
-                }
-              })
-              .catch((error) => console.log("Error getting user chats: ", error)).finally(() => console.log("dinejj"));
+        .finally(() => console.log("done fetching all users"));
 
-
+      getUserChats(id)
+        .then((userChatsResponse) => {
+          if (userChatsResponse) {
+            setUserChats(
+              userChatsResponse.sort(
+                (a, b) =>
+                  new Date(b.chats[b.chats.length - 1].date).getTime() -
+                  new Date(a.chats[a.chats.length - 1].date).getTime()
+              )
+            );
+            setActiveUserChat(userChatsResponse[0]);
+          } else {
+            setUserChats([{ user: TacoDog, chats: null }]);
+            setActiveUserChat({ user: TacoDog, chats: null });
+          }
+          setChatUsersID(`_${[(userChatsResponse?.[0].user || TacoDog).id, id].sort().join("_")}_`);
+        })
+        .catch((error) => console.log("Error getting user chats: ", error))
+        .finally(() => console.log("dinejj"));
+      console.log("User:", (session?.user as User).username);
     }
-  }, [currentUser]);
+  }, [session, currentUser]);
 
   const handleNewChat = useCallback(() => {
     setSearchText("");
@@ -116,7 +110,7 @@ export default function Chat() {
     if (currentUser && userChats) {
       const IDs = `_${[id, currentUser.id].sort().join("_")}_`;
       const isNewChat = (userChats.find((userChat) => userChat.user.id === id) as UserChat) || null;
-
+      console.log("bbb", IDs, isNewChat);
       setChatUsersID(IDs);
       setIsNewChat(false);
       setShowSearchModal(false);
@@ -125,6 +119,25 @@ export default function Chat() {
           ? isNewChat
           : { user: allUsers.find((user) => user.id === id) as User, chats: null }
       );
+
+      if (!isNewChat) return;
+
+      let seenChat = isNewChat.chats?.at(-1) as ChatHistory;
+
+      if (seenChat?.isSeen) return;
+
+      console.log("fefehhf");
+      //fuck this took a long time
+      //and even longer because this is wrong
+      seenChat = { ...seenChat, isSeen: true };
+      const chatTop = userChats?.[0] as UserChat;
+      chatTop.chats?.splice((isNewChat.chats?.length || 1) - 1, 1, seenChat);
+      console.log("jol", seenChat, chatTop, userChats);
+
+      socket.emit("seenChat", {
+        senderID: seenChat.senderID,
+        index: isNewChat?.chats?.indexOf(seenChat),
+      });
       // setActiveChatUser(allUsers.find((user) => user.id === id) as User);
       // if (userChats)
       //   setActiveChatHistory(userChats.find((chat) => chat.id === id) as ChatHistory[]);
@@ -135,14 +148,54 @@ export default function Chat() {
     }
   };
 
+  // TODO fix video call time
   useEffect(() => {
-    socket.on(`receiveChat:${chatUsersID}`, async (value) => {
+    //also the method for handling seenMessages
+    socket.on(`receiveChat:${currentUser?.id}`, async (newChat) => {
+      console.log("receiver", newChat);
+
+      if (newChat.senderID !== activeUserChat?.user.id) {
+        const inUserChats =
+          userChats?.find((userChat) => userChat?.user?.id === newChat.senderID) || null;
+
+        if (!inUserChats) {
+          const updatedUserChats = [...(userChats as UserChat[])];
+          const currentUserChat = {
+            user:
+              newChat.senderID === currentUser?.id
+                ? activeUserChat?.user
+                : allUsers.find((user) => user.id === newChat.senderID),
+            chats: [newChat],
+          } as UserChat;
+          updatedUserChats?.unshift(currentUserChat);
+          console.log("gano", updatedUserChats);
+          setActiveUserChat(currentUserChat);
+          setUserChats(updatedUserChats);
+          return;
+        }
+
+        const chats = [...(userChats as UserChat[])];
+        const index = userChats?.indexOf(inUserChats) || 0;
+
+        if (index > 0) {
+          chats.splice(index, 1); //delete from its current position
+          chats.unshift(inUserChats); //add to top of list
+        }
+        // const updatedUserChats = [...userChats]
+
+        console.log("plplp");
+        // setActiveUserChat(updated);
+        return;
+      }
       if (activeUserChat) {
+        console.log("ri");
         setActiveUserChat({
           ...activeUserChat,
-          chats: [...(activeUserChat.chats || []), value],
+          chats: [...(activeUserChat.chats || []), newChat],
         });
+        updateUserChats([...(activeUserChat?.chats || []), newChat] as ChatHistory[]);
       }
+
       // setActiveChatHistory([...(activeChatHistory || []), value]);
     });
 
@@ -170,12 +223,29 @@ export default function Chat() {
       handleVideoCallEnd(false);
     });
 
-    socket.on(`typing:${currentUser?.id}`, () => {
-      setIsTyping(!isTyping);
+    socket.on(`typing:${currentUser?.id}`, ({ senderID, state = true }) => {
+      console.log(senderID, state);
+      if (activeUserChat?.user.id === senderID) setIsTyping(state);
+    });
+
+    socket.on(`seenChat:${currentUser?.id}`, (index) => {
+      const update = activeUserChat;
+      if (!update || !update.chats) return;
+      update.chats[index] = { ...update.chats[index], isSeen: true };
+
+      if (userChats) {
+        const updatedChats = [...userChats]; // Copy the array
+        const index = userChats.indexOf(update);
+
+        if (index !== -1) {
+          updatedChats.splice(index, 1, update); // Replace the element at index
+          // setUserChats(updatedChats); // Update state with the modified array
+        }
+      }
     });
 
     return () => {
-      socket.off(`receiveChat:${chatUsersID}`);
+      socket.off(`receiveChat:${currentUser?.id}`);
       socket.off(`receiveCall:${currentUser?.id}`);
       socket.off(`acceptCall`);
       socket.off(`rejectCall:${currentUser?.id}`);
@@ -183,27 +253,76 @@ export default function Chat() {
     };
   });
 
-  const updateChat = (newChat: ChatHistory) => {
-    console.log("ppp", newChat)
-    if (
-      userChats &&
-      activeUserChat &&
-      !userChats.find((userChat) => userChat.user.id == activeUserChat.user.id)
-    ) {
-      userChats.splice(0, 0, { user: activeUserChat.user, chats: [newChat] });
-    } else if (userChats && activeUserChat) {
-      const index = userChats.indexOf(activeUserChat);
-      const updated = [...userChats];
-      // const updated = [...userChats].splice(index, 1);
-      // updated.splice(0, 0, activeUserChat);
-      if (index > 0) {
-        updated.splice(index, 1);
-        updated.splice(0, 0, activeUserChat);
+  const updateUserChats = useCallback(
+    (activeUserChatHistory: ChatHistory[], newChat?: ChatHistory) => {
+      console.log("jyjyjyj");
+
+      if (!userChats || !activeUserChat) return;
+
+      if (!newChat) {
+        const update = [...userChats];
+        update[0].chats = activeUserChatHistory;
+        setUserChats(update);
+        return;
       }
-      if (updated[0].chats) updated[0].chats?.push(newChat);
-      console.log("grgr", updated)
-      setUserChats(updated);
-    }
+      //move activeUserChat to top of list with updated messages
+      if (userChats.find((userChat) => userChat.user.id === activeUserChat.user.id)) {
+        const updated = [...userChats];
+        const index = updated.findIndex((userChat) => userChat.user.id === activeUserChat.user.id);
+
+        if (index > 0) {
+          updated.splice(index, 1); //delete from its current position
+          updated.unshift(activeUserChat); //add to top of list
+        }
+
+        console.log("lll", index, updated, userChats, activeUserChat);
+
+        updated[0].chats = updated[0].chats ? [...updated[0].chats, newChat] : [newChat];
+        console.log("grgr", updated);
+        setUserChats(updated);
+      } else {
+        console.log("meow");
+        userChats.splice(0, 0, { user: activeUserChat.user, chats: [newChat] });
+      }
+    },
+    [activeUserChat, userChats]
+  );
+
+  const handleSeenMessage = (id: number) => {
+    // console.log("lop", activeUserChat?.chats);
+    let seenChat = activeUserChat?.chats?.[id] as ChatHistory;
+    console.log("see", seenChat, id, activeUserChat);
+    if (!seenChat || seenChat.isSeen) return;
+
+    //fuck this took a long time
+    seenChat = { ...seenChat, isSeen: true };
+    const chatTop = userChats?.[0] as UserChat;
+    chatTop.chats?.splice(id, 1, seenChat);
+    console.log(seenChat, chatTop, userChats);
+
+    socket.emit("seenChat", {
+      senderID: seenChat.senderID,
+      index: chatTop.chats?.indexOf(seenChat),
+    });
+    // setUserChats(up)
+    // if (activeUserChat)
+    //   setActiveUserChat({
+    //     ...activeUserChat,
+    //     chats: chats.splice(
+    //       id,
+    //       1,
+    //       seenChat
+    //     ) as ChatHistory[],
+    //   });
+
+    // const update = userChats?.find((userChat) => userChat.user === activeUserChat?.user);
+    // if (update && update.chats) update.chats[id] = { ...update?.chats?.[id], isSeen: true };
+
+    // console.log("uoaef,", update);
+    // setUserChats(update);
+
+    // console.log("pol", activeUserChat?.chats);
+    // socket.emit("seenMessage", { value });
   };
 
   useEffect(() => {
@@ -216,9 +335,9 @@ export default function Chat() {
       e.preventDefault();
 
       if (chatMessageRef.current) chatMessageRef.current.textContent = "";
-
+      console.log("sender", chatUsersID);
       const chatHistory = {
-        chatUsersID: chatUsersID,
+        receiverID: activeUserChat?.user.id,
         newChatMessage: { senderID: currentUser.id, chatMessage: chatMessage, date: new Date() },
         activeChatHistory: activeUserChat?.chats || [],
       };
@@ -227,7 +346,14 @@ export default function Chat() {
       //   chatUsers.push(activeChatUser);
       // }
       //for ui update of recent chats
-      updateChat(chatHistory.newChatMessage);
+
+      if (activeUserChat) {
+        setActiveUserChat({
+          ...activeUserChat,
+          chats: [...(activeUserChat.chats || []), chatHistory.newChatMessage],
+        });
+      }
+      updateUserChats(activeUserChat?.chats as ChatHistory[], chatHistory.newChatMessage);
 
       //user input
       socket.emit("sendChat", chatHistory);
@@ -236,9 +362,11 @@ export default function Chat() {
       if (chatMessage.startsWith("@t")) {
         const result = await askTacoDog(chatMessage);
 
+        socket.emit("typing", { senderID: currentUser?.id, receiverID: TacoDog.id });
+
         socket.emit("sendChat", {
           ...chatHistory,
-          newChatMessage: result,
+          newChatMessage: { ...result, date: new Date() },
           activeChatHistory: [
             ...(activeUserChat?.chats as ChatHistory[]),
             chatHistory.newChatMessage,
@@ -285,14 +413,15 @@ export default function Chat() {
   };
 
   useEffect(() => {
+    console.log("grgrgrgrgr");
     if (messageContainerRef.current) {
       const height = messageContainerRef.current.scrollHeight - 630;
 
       //double scrollTo due to sequence the scrollTo:instant in the useEffect below this
-      messageContainerRef.current.scrollTo({
-        top: height,
-        behavior: "instant",
-      });
+      // messageContainerRef.current.scrollTo({
+      //   top: height,
+      //   behavior: "instant",
+      // });
 
       messageContainerRef.current.scrollTo({
         top: messageContainerRef.current.scrollHeight,
@@ -305,6 +434,8 @@ export default function Chat() {
     if (activeUserChat?.user) {
       fade();
     }
+
+    setIsTyping(false); //typing is false by default when switching convos
 
     if (messageContainerRef.current) {
       messageContainerRef.current.scrollTo({
@@ -323,17 +454,23 @@ export default function Chat() {
     if (chatMessageRef.current && !chatMessage) {
       chatMessageRef.current.textContent = "";
       setChatMessage("");
-
-      if (activeUserChat) socket.emit("typing", activeUserChat.user.id);
     }
+
+    if (activeUserChat)
+      socket.emit("typing", { senderID: currentUser?.id, receiverID: activeUserChat.user.id });
   };
 
   const handleBlur = () => {
     if (chatMessageRef.current && !chatMessage) {
       chatMessageRef.current.textContent = "Enter message...";
-
-      if (activeUserChat) socket.emit("typing", activeUserChat.user.id);
     }
+
+    if (activeUserChat)
+      socket.emit("typing", {
+        senderID: currentUser?.id,
+        receiverID: activeUserChat.user.id,
+        state: false,
+      });
   };
 
   useEffect(() => {
@@ -358,7 +495,6 @@ export default function Chat() {
     socket.emit("call", {
       caller: currentUser,
       receiverID: activeUserChat?.user?.id,
-      // receiverID: activeChatUser?.id,
     });
   };
 
@@ -384,7 +520,7 @@ export default function Chat() {
 
       if (callDuration && activeUserChat) {
         const chatHistory = {
-          chatUsersID: chatUsersID,
+          receiverID: activeUserChat?.user?.id,
           newChatMessage: {
             type: "call",
             senderID: activeUserChat.user.id,
@@ -394,8 +530,16 @@ export default function Chat() {
           },
           activeChatHistory: activeChatHistory || [],
         };
-        
-        updateChat(chatHistory.newChatMessage);
+
+        console.log("llololol", activeUserChat);
+        if (activeUserChat) {
+          setActiveUserChat({
+            ...activeUserChat,
+            chats: [...(activeUserChat.chats || []), chatHistory.newChatMessage],
+          });
+        }
+
+        updateUserChats(activeUserChat?.chats as ChatHistory[], chatHistory.newChatMessage);
 
         socket.emit("sendChat", chatHistory);
       }
@@ -443,10 +587,11 @@ export default function Chat() {
       ) : (
         <>
           <ChatSidebar
+            currentUserID={currentUser?.id as string}
             allUsers={allUsers}
             userChats={userChats as UserChat[]}
             // activeChatUserID={activeChatUser.user?.id as string}
-            activeChatUserID={activeUserChat.user?.id as string}
+            activeChatUser={activeUserChat.user as User}
             handleSetActiveChat={handleSetActiveChat}
             handleNewChat={handleNewChat}
             handleNewChatClose={handleNewChatClose}
@@ -558,30 +703,17 @@ export default function Chat() {
                         autoPlay
                         playsInline
                         controls={false}
-                        className="z-[100] mt-[8%]  aspect-video  "
+                        className="z-[48] mt-[8%]  aspect-video  "
                       />
                     ) : (
-                      <div className="h-[32rem] w-[85%] flex flex-col gap-5 px-3  ">
+                      <div className="h-[32rem] relative w-[85%] flex flex-col gap-5 px-3  ">
                         {activeUserChat.chats && currentUser ? (
-                          <>
-                            {true && (
-                              <Avatar className="absolute mb-1 z-0">
-                                <Image
-                                  src={activeUserChat.user.avatar?.img as StaticImageData}
-                                  alt="User Avatar"
-                                  height={300}
-                                  width={300}
-                                  className="aspect-square h-5 w-5"
-                                />
-                                {/* <AvatarFallback>{activeChatUser.username[0]}</AvatarFallback> */}
-                              </Avatar>
-                            )}
-                            <ChatMessages
-                              activeChatHistory={activeUserChat.chats}
-                              currentUser={currentUser}
-                              activeChatUser={activeUserChat.user}
-                            />
-                          </>
+                          <ChatMessages
+                            activeChatHistory={activeUserChat.chats}
+                            activeChatUser={activeUserChat.user}
+                            currentUser={currentUser}
+                            handleSeenMessage={handleSeenMessage}
+                          />
                         ) : (
                           <CardDescription className="h-full text-muted-secondary/40  text-center w-full flex text-base  flex-col justify-center items-center">
                             <Image
@@ -602,12 +734,12 @@ export default function Chat() {
                       </div>
                     )}
                   </div>
-                  {isTyping && (
-                    <div className="duration-500 ease-in-out text-muted-secondary/40 absolute bottom-[20%] w-fit flex gap-0 left-1/2 -translate-x-1/2 z-100">
+                  {isTyping && document.activeElement != chatMessageRef.current && (
+                    <div className="duration-500 ease-in-out text-xs text-muted-secondary/40 absolute bottom-[19%] w-fit flex gap-0 left-1/2 -translate-x-1/2 z-100">
                       {activeUserChat.user.username} is typing
-                      <span className="animate-typing delay-0 ">.</span>
-                      <span className="animate-typing  delay-300">.</span>
-                      <span className="animate-typing  delay-500">.</span>
+                      <h2 className="text-lg leading-none animate-typing delay-0 ">.</h2>
+                      <h2 className="text-lg leading-none animate-typing  delay-300">.</h2>
+                      <h2 className="text-lg leading-none animate-typing  delay-500">.</h2>
                     </div>
                   )}
 

@@ -149,6 +149,8 @@ export default function Chat() {
   };
 
   // TODO fix video call time
+  // TODO implement deliver and emoji, and image sharing 
+  // TODO clean code
   useEffect(() => {
     //also the method for handling seenMessages
     socket.on(`receiveChat:${currentUser?.id}`, async (newChat) => {

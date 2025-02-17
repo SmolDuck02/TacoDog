@@ -40,7 +40,7 @@ export const options: NextAuthOptions = {
 
             console.log("Logging in: Success Found user: ", user.username);
 
-            return user;
+            return user as User;
 
             // const passwordMatch = await bcrypt.compare(password, (user as User).password);
             // if (!passwordMatch) {

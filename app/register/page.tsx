@@ -16,7 +16,7 @@ import { toast } from "sonner";
 
 export default function Register() {
   const router = useRouter();
-  const session = useSession();
+  const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isError, setIsError] = useState<RegistrationError>({ show: false });
@@ -25,6 +25,12 @@ export default function Register() {
   const [formData, setFormData] = useState<User>({ id: "", username: "", password: "" });
   const [confirmPassword, setConfirmPassword] = useState<String>("");
 
+  useEffect(() => {
+    if (session && session.user) {
+      router.replace("/chat");
+    }
+  }, [session, router]);
+  
   //confirm password and password validation
   useEffect(() => {
     if (mode.match("Sign Up")) {
@@ -124,7 +130,7 @@ export default function Register() {
         const response = await signIn("credentials", {
           formData: JSON.stringify(formData),
           mode: mode,
-          redirect: true,
+          redirect: false,
           callbackUrl: "/chat",
         });
 
@@ -134,7 +140,8 @@ export default function Register() {
         }
 
         console.log("response", response);
-        router.replace("/chat");
+        // router.replace("/chat");
+        // router.refresh();
       } catch (error) {
         console.error(`${mode} error`, error);
       } finally {

@@ -24,12 +24,6 @@ export default function Register() {
   const [mode, setMode] = useState<"Sign In" | "Sign Up">("Sign In");
   const [formData, setFormData] = useState<User>({ id: "", username: "", password: "" });
   const [confirmPassword, setConfirmPassword] = useState<String>("");
-
-  useEffect(() => {
-    if (session && session.user) {
-      router.replace("/chat");
-    }
-  }, [session, router]);
   
   //confirm password and password validation
   useEffect(() => {
@@ -140,7 +134,7 @@ export default function Register() {
         }
 
         console.log("response", response);
-        // router.replace("/chat");
+        router.replace("/chat");
         // router.refresh();
       } catch (error) {
         console.error(`${mode} error`, error);

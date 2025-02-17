@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 export function middleware(req: NextRequest) {
   const isAuthenticated = req.cookies.get("next-auth.session-token") || null;
+  console.log(req.cookies);
   const pathname = req.nextUrl.pathname;
   if (!isAuthenticated && pathname == "/chat") {
     return NextResponse.redirect(new URL("/register", req.url));

@@ -129,7 +129,7 @@ export default function Register() {
         });
 
         console.log("response", response);
-        if (response && response.url) router.push(response.url);
+        if (response && response.url) router.push("/chat");
         const { error } = response as { error: string };
         if (error) {
           setIsError({ show: true, message: error });

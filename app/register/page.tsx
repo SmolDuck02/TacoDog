@@ -124,7 +124,7 @@ export default function Register() {
         const response = await signIn("credentials", {
           formData: JSON.stringify(formData),
           mode: mode,
-          redirect: false,
+          redirect: true,
           callbackUrl: "/chat",
         });
 

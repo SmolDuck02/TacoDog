@@ -128,12 +128,13 @@ export default function Register() {
           callbackUrl: "/chat",
         });
 
-        console.log("response", response);
-        if (response && response.url) router.push("/chat");
         const { error } = response as { error: string };
         if (error) {
           setIsError({ show: true, message: error });
         }
+
+        console.log("response", response);
+        router.push("/chat");
       } catch (error) {
         console.error(`${mode} error`, error);
       } finally {

@@ -134,7 +134,7 @@ export default function Register() {
         }
 
         console.log("response", response);
-        router.push("/chat");
+        router.replace("/chat");
       } catch (error) {
         console.error(`${mode} error`, error);
       } finally {

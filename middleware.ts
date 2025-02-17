@@ -2,7 +2,9 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 export function middleware(req: NextRequest) {
-  const isAuthenticated = req.cookies.has("next-auth.session-token");
+  const isAuthenticated =
+    req.cookies.has("__Secure-next-auth.session-token") ||
+    req.cookies.has("next-auth.session-token");
 
   const pathname = req.nextUrl.pathname;
   if (!isAuthenticated && pathname == "/chat") {

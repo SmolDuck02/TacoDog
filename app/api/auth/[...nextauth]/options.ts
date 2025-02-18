@@ -1,13 +1,39 @@
 import type { User } from "@/lib/types";
+import { avatars, banners } from "@/lib/utils";
 import { UpstashRedisAdapter } from "@next-auth/upstash-redis-adapter";
 import { Redis } from "@upstash/redis";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
+
 const bcrypt = require("bcrypt");
 const redis = Redis.fromEnv();
 export const options: NextAuthOptions = {
   adapter: UpstashRedisAdapter(redis),
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+      async profile(profile) {
+        const existingUser = await redis.get(`user:${profile.sub}`);
+
+        if (existingUser) {
+          return existingUser;
+        }
+
+        const newUser = {
+          id: profile.sub,
+          username: profile.name,
+          avatar: avatars[Math.floor(Math.random() * 10) % avatars.length],
+          banner: banners[Math.floor(Math.random() * 10) % banners.length],
+          ...profile,
+        };
+        console.log("geyty", newUser);
+
+        await redis.set(`user:${profile.sub}`, newUser);
+        return newUser;
+      },
+    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {},
@@ -41,33 +67,7 @@ export const options: NextAuthOptions = {
             console.log("Logging in: Success Found user: ", user.username);
 
             return user as User;
-
-            // const passwordMatch = await bcrypt.compare(password, (user as User).password);
-            // if (!passwordMatch) {
-            //   throw new Error("Incorrect password!");
-            // }
           }
-          //user registration
-          // else {
-          //   if (user) {
-          //     throw new Error("User already exists!");
-          //   }
-
-          //   const hashedPassword = await bcrypt.hash(password, 10);
-
-          //   //redis.set dont return the record created, only an 'OK'
-          //   await redis.set(`user:${id}`, {
-          //     id,
-          //     username,
-          //     password: hashedPassword,
-          //     avatar: avatars[id % avatars.length],
-          //     banner: banners[id % banners.length],
-          //   });
-          // }
-
-          // user = await redis.get(`user:${id}`);
-          // console.log(`Auth fetched user: ${user}`);
-          // return user as User;
         } catch (error) {
           console.log(`${mode} catch error:`, error);
           throw error;

@@ -1,18 +1,16 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import ThemeModeButton from "@/components/ui/theme-mode-button";
 import { registerUser } from "@/lib/api";
 import { RegistrationError, type User } from "@/lib/types";
-import { iconSizeSmall } from "@/lib/utils";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
+import GoogleIcon from "@/public/icons/flat-color-icons--google.svg"
 
 export default function Register() {
   const router = useRouter();
@@ -24,7 +22,7 @@ export default function Register() {
   const [mode, setMode] = useState<"Sign In" | "Sign Up">("Sign In");
   const [formData, setFormData] = useState<User>({ id: "", username: "", password: "" });
   const [confirmPassword, setConfirmPassword] = useState<String>("");
-  
+
   //confirm password and password validation
   useEffect(() => {
     if (mode.match("Sign Up")) {
@@ -135,7 +133,6 @@ export default function Register() {
 
         console.log("response", response);
         router.replace("/chat");
-        // router.refresh();
       } catch (error) {
         console.error(`${mode} error`, error);
       } finally {
@@ -190,17 +187,19 @@ export default function Register() {
       </div>
 
       <form
-        onSubmit={(e) => (mode.match("Sign In") ? handleSubmit(e) : handleRegister(e))}
+        // onSubmit={(e) => (mode.match("Sign In") ? handleSubmit(e) : handleRegister(e))}
         className="z-20 w-full  lg:w-1/2 flex lg:justify-start justify-center"
       >
-        <Card className="min-h-96 w-[25rem] backdrop-blur-lg opacity-90">
+        {/* min-h-96  */}
+        <Card className="w-[25rem] backdrop-blur-lg opacity-90">
           <CardHeader className="pb-3">
             <CardTitle className="flex text-3xl items-end justify-between">
               {mode} <ThemeModeButton />
             </CardTitle>
           </CardHeader>
-          <CardContent className="min-h-72  flex flex-col justify-center">
-            <div className="relative grid gap-4 py-4">
+          {/* min-h-72  */}
+          <CardContent className=" flex flex-col justify-center">
+            {/* <div className="relative grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="username" className="text-right">
                   Username
@@ -286,15 +285,21 @@ export default function Register() {
                   {isValid.show ? isValid.message : isError.message}
                 </span>
               )}
-            </div>
+            </div> */}
             <div className="py-2">
               {isLoading ? (
                 <Button disabled className="w-full">
                   <Loader2 className="mr-2 h-4  animate-spin" /> Loading
                 </Button>
               ) : (
-                <Button disabled={isValid.show} type="submit" className="w-full">
-                  {mode}
+                <Button
+                  className="w-full flex items-center gap-2"
+                  disabled={isValid.show}
+                  onClick={() => signIn("google", { redirect: true })}
+                  type="button"
+                >
+                  <Image width={100} height={100} alt="Google Icon" src={GoogleIcon} className="size-6" />
+                  <span>{mode} with Google</span>
                 </Button>
               )}
             </div>

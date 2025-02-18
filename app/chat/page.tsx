@@ -94,6 +94,7 @@ export default function Chat() {
     }
   }, [session, currentUser]);
 
+  console.log(currentUser);
   const handleNewChat = useCallback(() => {
     setSearchText("");
     setShowSearchModalMini(false);
@@ -149,7 +150,7 @@ export default function Chat() {
   };
 
   // TODO fix video call time
-  // TODO implement deliver and emoji, and image sharing 
+  // TODO implement deliver and emoji, and image sharing
   // TODO clean code
   useEffect(() => {
     //also the method for handling seenMessages

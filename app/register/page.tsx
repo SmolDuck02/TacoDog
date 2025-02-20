@@ -1,16 +1,18 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import ThemeModeButton from "@/components/ui/theme-mode-button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { registerUser } from "@/lib/api";
 import { RegistrationError, type User } from "@/lib/types";
-import { Loader2 } from "lucide-react";
+import { iconSmall } from "@/lib/utils";
+import GoogleIcon from "@/public/icons/flat-color-icons--google.svg";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
-import GoogleIcon from "@/public/icons/flat-color-icons--google.svg"
 
 export default function Register() {
   const router = useRouter();
@@ -159,7 +161,7 @@ export default function Register() {
   return (
     <main
       className={` flex flex-col lg:flex-row
-      h-screen w-screen relative bg-[#eee] dark:bg-slate-950 justify-center items-center gap-10 overflow-hidden`}
+      h-screen w-screen relative bg-[#ebe8e4] dark:bg-slate-950 justify-center items-center gap-10 overflow-hidden`}
     >
       {/* <div className="z-10  max-h-screen overflow-hidden hidden lg:flex flex-col items-end justify-center w-full absolute">
         <Image
@@ -187,19 +189,20 @@ export default function Register() {
       </div>
 
       <form
-        // onSubmit={(e) => (mode.match("Sign In") ? handleSubmit(e) : handleRegister(e))}
+        onSubmit={(e) => (mode.match("Sign In") ? handleSubmit(e) : handleRegister(e))}
         className="z-20 w-full  lg:w-1/2 flex lg:justify-start justify-center"
       >
         {/* min-h-96  */}
-        <Card className="w-[25rem] backdrop-blur-lg opacity-90">
+        <Card className="w-3/4 lg:w-[25rem] backdrop-blur-lg opacity-90">
           <CardHeader className="pb-3">
-            <CardTitle className="flex text-3xl items-end justify-between">
-              {mode} <ThemeModeButton />
+            <CardTitle className="flex text-3xl items-end justify-center lg:justify-between">
+              {mode}
+              {/* <ThemeModeButton /> */}
             </CardTitle>
           </CardHeader>
           {/* min-h-72  */}
           <CardContent className=" flex flex-col justify-center">
-            {/* <div className="relative grid gap-4 py-4">
+            <div className="relative grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="username" className="text-right">
                   Username
@@ -233,7 +236,7 @@ export default function Register() {
                     className="absolute text-slate-500 right-4 cursor-pointer"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff size={iconSizeSmall} /> : <Eye size={iconSizeSmall} />}
+                    {showPassword ? <EyeOff size={iconSmall} /> : <Eye size={iconSmall} />}
                   </div>
                 </div>
                 {mode == "Sign Up" && (
@@ -253,15 +256,11 @@ export default function Register() {
                       className="absolute text-slate-500 right-4 cursor-pointer"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? (
-                        <EyeOff size={iconSizeSmall} />
-                      ) : (
-                        <Eye size={iconSizeSmall} />
-                      )}
+                      {showPassword ? <EyeOff size={iconSmall} /> : <Eye size={iconSmall} />}
                     </div>
                   </div>
                 )}
-                <span className="text-xs text-slate-500 w-fit">
+                {/* <span className="text-xs text-slate-500 w-fit">
                   {mode.match("Sign In") ? "Don't" : "Already"} have an account?
                   <Button
                     variant={"link"}
@@ -277,7 +276,7 @@ export default function Register() {
                   >
                     {mode.match("Sign In") ? "Sign Up" : "Sign In"} here
                   </Button>
-                </span>
+                </span> */}
               </div>
 
               {(isValid.show || isError.show) && (
@@ -285,7 +284,7 @@ export default function Register() {
                   {isValid.show ? isValid.message : isError.message}
                 </span>
               )}
-            </div> */}
+            </div>
             <div className="py-2">
               {isLoading ? (
                 <Button disabled className="w-full">
@@ -295,14 +294,28 @@ export default function Register() {
                 <Button
                   className="w-full flex items-center gap-2"
                   disabled={isValid.show}
-                  onClick={() => signIn("google", { redirect: true })}
-                  type="button"
+                  type="submit"
                 >
-                  <Image width={100} height={100} alt="Google Icon" src={GoogleIcon} className="size-6" />
-                  <span>{mode} with Google</span>
+                  <span>{mode}</span>
                 </Button>
               )}
             </div>
+
+            <Button
+              className="w-full flex items-center gap-2"
+              disabled={isValid.show}
+              onClick={() => signIn("google", { redirect: true })}
+              type="button"
+            >
+              <Image
+                width={100}
+                height={100}
+                alt="Google Icon"
+                src={GoogleIcon}
+                className="size-6"
+              />
+              <span>{mode} with Google</span>
+            </Button>
           </CardContent>
         </Card>
       </form>

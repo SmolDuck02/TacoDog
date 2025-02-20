@@ -26,7 +26,7 @@ export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
         {/* profile header */}
         <div
           className={`   p-2 flex gap-4  hover:bg-muted  ${
-            isChatSidebar ? "justify-start rounded w-full" : "justify-center rounded-full w-fit"
+            isChatSidebar ? "justify-start rounded-lg w-full" : "justify-center rounded-full w-fit"
           } items-center   cursor-pointer `}
         >
           <Avatar className="h-9 w-9 ">
@@ -38,7 +38,7 @@ export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
           </span>
         </div>
       </PopoverTrigger>
-      <PopoverContent className={`mb-2 ml-0 p-0 pb-3 w-[20rem] sm:max-w-[425px]`}>
+      <PopoverContent id="profileModal" className={` mb-2 ml-0 p-0 pb-3 w-[20rem] sm:max-w-[425px]`}>
         {/* profile menu component */}
 
         <DialogHeader>

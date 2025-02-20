@@ -1,7 +1,7 @@
 "use server";
 // import ava from "@/public/avatars/tacodog.png";
 // import bg from "@/public/bg/tacodog.jpg";
-import { ChatHistory, User } from "../types";
+import { ChatHistory, User, UserChat } from "../types";
 import { avatars, banners, redis } from "../utils";
 const bcrypt = require("bcrypt");
 
@@ -53,6 +53,13 @@ export async function registerUser(formData: User) {
 
 export async function getAllUsers() {
   try {
+    const cachedUsers = await redis.get("cachedUsers");
+
+    if (cachedUsers) {
+      console.log("Returning cached users...");
+      return cachedUsers as User[];
+    }
+
     const keys = await redis.keys("user:*");
     const values: User[] = await redis.mget(...keys);
 
@@ -66,6 +73,9 @@ export async function getAllUsers() {
     }));
 
     console.log("all users fetched successful");
+
+    await redis.set("cachedUsers", records, { ex: 60 * 60 * 24 });
+    console.log("Returning users ...");
     return records;
   } catch (error) {
     console.error("Error fetching all users:", error);
@@ -85,6 +95,13 @@ export async function getActiveChatHistory(chatUsers: string) {
 
 export async function getUserChats(id: string) {
   try {
+    const cachedUserChats = await redis.get(`cachedUserChats:${id}`);
+
+    if (cachedUserChats) {
+      console.log("Returning cached user chats...");
+      return cachedUserChats as UserChat[];
+    }
+
     const pattern = `_${id}_`;
     const keys = await redis.keys(`chatHistory*${pattern}*`);
 
@@ -113,6 +130,8 @@ export async function getUserChats(id: string) {
       return { user: user, chats: chats[index] };
     });
 
+    await redis.set(`cachedUserChats:${id}`, userChats, { ex: 60 * 60 * 24 });
+    console.log("Returning user chats...");
     return userChats;
   } catch (error) {
     console.error("error fetching user chats ", error);

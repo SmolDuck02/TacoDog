@@ -1,3 +1,4 @@
+import { ImageUpload } from "@/app/chat/page";
 import { ChatHistory, User } from "@/lib/types";
 import { monthDateOptions, timeOptions, yearDateOptions } from "@/lib/utils";
 import { Label } from "@radix-ui/react-label";
@@ -65,7 +66,7 @@ export default function ChatMesages({
       lastChat.getBoundingClientRect().top >= 0 &&
       lastChat.getBoundingClientRect().bottom <= window.innerHeight
     ) {
-      console.log("readOn", activeChatHistory, lastChat?.id, lastChat.textContent);
+      // console.log("readOn", activeChatHistory, lastChat?.id, lastChat.textContent);
       const isAuthor = activeChatHistory[+lastChat?.id as number]?.senderID === currentUser.id;
       if (lastChat.id && !isAuthor) handleSeenMessage(+lastChat.id);
     }
@@ -91,11 +92,11 @@ export default function ChatMesages({
   return (
     <>
       {/* empty div for padding*/}
-      <div className="min-h-[3rem] "></div>
+      {/* <div className="min-h-[3rem] "></div> */}
 
       {/* chat messages */}
       {activeChatHistory.map((message, index) => {
-        console.log("g??", message);
+        // console.log("g??", message);
         if (!message) return;
         const {
           senderID,
@@ -103,7 +104,7 @@ export default function ChatMesages({
           end,
           isSeen = false,
           isDelivered = false,
-
+          uploads = null,
           date: messageDate,
         } = message;
         const chatMessage = message.chatMessage || false;
@@ -128,7 +129,7 @@ export default function ChatMesages({
               isAuthor ? "justify-end pl-1/5" : "pr-1/5"
             } ${!chatMessage && "self-center"} `}
           >
-            {!chatMessage ? (
+            {!chatMessage && !uploads ? (
               <div className="text-sm text-muted-secondary gap-4 flex justify-center items-center  text-center py-2">
                 <span className="w-4 bg-muted-secondary/50 h-[0.1rem] rounded" />
                 <div id={index.toString()} className="video chatMessage flex flex-col">
@@ -171,23 +172,19 @@ export default function ChatMesages({
                     </Label>
                   )} */}
 
-                  <CardContent
-                    id={index.toString()}
-                    key={index}
-                    className="chatMessage flex-wrap break-all z-[10] bg-white dark:bg-slate-950 text-justify shadow border p-3 px-5 flex items-start max-w-[80%] rounded-lg"
-                  >
-                    {chatMessage}
-                  </CardContent>
-
-                  <Label
-                    className={`date px-3 flex ${
-                      isAuthor ? "justify-end" : "justify-start"
-                    } opacity-0 ease-out duration-300 transition-all bottom-0 absolute
-                   text-[10px] text-muted-foreground`}
-                  >
-                    {date}
-                  </Label>
-                  {isSeen && isLastMessage && isAuthor && (
+                  {chatMessage && (
+                    <CardContent
+                      id={index.toString()}
+                      key={index}
+                      className="chatMessage flex-wrap break-all z-[10] bg-[#ebe8e4] dark:bg-slate-950 text-justify shadow border py-2 px-3 flex items-start max-w-[80%] rounded-lg"
+                    >
+                      {chatMessage}
+                    </CardContent>
+                  )}
+                  
+                  {uploads && <ImageUpload fileUploads={uploads} />}
+                  
+                  {isSeen && isLastMessage && isAuthor ? (
                     <div className="activeUserAvatar absolute w-fit -bottom-1 -right-1  z-10">
                       <Image
                         src={activeChatUser.avatar?.img as StaticImageData}
@@ -197,6 +194,15 @@ export default function ChatMesages({
                         className="aspect-square rounded-full object-cover h-5 w-5"
                       />
                     </div>
+                  ) : (
+                    <Label
+                      className={`date px-2 flex ${isAuthor ? "justify-end" : "justify-start"} ${
+                        isLastMessage ? "opacity-100 -bottom-4" : "opacity-0  bottom-0"
+                      }  ease-out duration-300 transition-all  absolute
+                   text-[10px] text-muted-foreground`}
+                    >
+                      Delivered • {date}
+                    </Label>
                   )}
                 </div>
               </>
@@ -206,7 +212,8 @@ export default function ChatMesages({
       })}
 
       {/* empty div for padding */}
-      <div className="min-h-5 "></div>
+      <div className="min-h-1 "></div>
+      {/* <div className="min-h-5 "></div> */}
     </>
   );
 }

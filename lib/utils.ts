@@ -16,8 +16,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const iconSize = 28;
-export const iconSizeSmall = 18;
+export const iconLarge = 28;
+export const iconSmall = 18;
+export const iconMedium = 22;
 
 export const avatars = [
   { img: defaultAvatar, name: "Jacket" },
@@ -73,8 +74,7 @@ export async function initializeCamera(videoRef: HTMLVideoElement) {
       console.warn("No cameras found.");
       return;
     }
-
-    console.log("g", cameras);
+    
     // Open the first available camera with a resolution of 1280x720
     const stream = await openCamera(cameras[0].deviceId, 1280, 720);
 

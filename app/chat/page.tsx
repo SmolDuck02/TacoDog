@@ -11,8 +11,9 @@ import { Input } from "@/components/ui/input";
 import { askTacoDog, getAllUsers, getUserChats } from "@/lib/api";
 import { socket } from "@/lib/socketClient";
 import { ChatHistory, User, UserChat } from "@/lib/types";
-import { iconSize, initializeCamera, TacoDog } from "@/lib/utils";
+import { iconLarge, initializeCamera, TacoDog } from "@/lib/utils";
 import TacoDogLogo from "@/public/logo.png";
+import EmojiPicker, { Theme } from "emoji-picker-react";
 import { Bone, Loader, Video, VideoOff } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image, { StaticImageData } from "next/image";
@@ -21,7 +22,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function Chat() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { user } = (useSession().data ?? { user: null }) as { user: User | null };
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userChats, setUserChats] = useState<UserChat[] | null>(null);
@@ -39,19 +40,29 @@ export default function Chat() {
   const [isVideoCallRinging, setIsVideoCallRinging] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [callDuration, setCallDuration] = useState<{ start: number; date: Date } | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const messageContainerRef = useRef<HTMLDivElement | null>(null);
-  const helloRef = useRef<HTMLDivElement | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [isTyping, setIsTyping] = useState<boolean>(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const messageContainerRef = useRef<HTMLDivElement>(null);
+  const helloRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const chatMessageRef = useRef<HTMLSpanElement>(null);
-  const [isTyping, setIsTyping] = useState<boolean>(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  // useEffect(() => {
+  //   if (!user) return;
+  //   console.log(user);
+  //   setCurrentUser(user as User);
+  // }, [user]);
 
   useEffect(() => {
-    if (!session || !session.user) return;
-    if (!currentUser) {
-      setCurrentUser(session.user as User);
-      const id = (session.user as User).id;
-      console.log("fetching");
+    if (user) {
+      const id = user.id;
+      console.log("fetching", user);
+
+      setCurrentUser(user as User);
+
       getAllUsers()
         .then((response) => {
           if (response) {
@@ -77,8 +88,8 @@ export default function Chat() {
             setUserChats(
               userChatsResponse.sort(
                 (a, b) =>
-                  new Date(b.chats[b.chats.length - 1].date).getTime() -
-                  new Date(a.chats[a.chats.length - 1].date).getTime()
+                  new Date(b.chats![b.chats!.length - 1].date).getTime() -
+                  new Date(a.chats![a.chats!.length - 1].date).getTime()
               )
             );
             setActiveUserChat(userChatsResponse[0]);
@@ -89,12 +100,11 @@ export default function Chat() {
           setChatUsersID(`_${[(userChatsResponse?.[0].user || TacoDog).id, id].sort().join("_")}_`);
         })
         .catch((error) => console.log("Error getting user chats: ", error))
-        .finally(() => console.log("dinejj"));
-      console.log("User:", (session?.user as User).username);
+        .finally(() => console.log("done fetching user chats"));
+      console.log("User:", user.username);
     }
-  }, [session, currentUser]);
+  }, []);
 
-  console.log(currentUser);
   const handleNewChat = useCallback(() => {
     setSearchText("");
     setShowSearchModalMini(false);
@@ -110,7 +120,8 @@ export default function Chat() {
   const handleSetActiveChat = (id: string) => {
     if (currentUser && userChats) {
       const IDs = `_${[id, currentUser.id].sort().join("_")}_`;
-      const isNewChat = (userChats.find((userChat) => userChat.user.id === id) as UserChat) || null;
+      const isNewChat =
+        (userChats.find((userChat) => userChat.user?.id === id) as UserChat) || null;
       console.log("bbb", IDs, isNewChat);
       setChatUsersID(IDs);
       setIsNewChat(false);
@@ -118,7 +129,7 @@ export default function Chat() {
       setActiveUserChat(
         isNewChat
           ? isNewChat
-          : { user: allUsers.find((user) => user.id === id) as User, chats: null }
+          : { user: allUsers.find((user) => user?.id === id) as User, chats: null }
       );
 
       if (!isNewChat) return;
@@ -167,7 +178,7 @@ export default function Chat() {
             user:
               newChat.senderID === currentUser?.id
                 ? activeUserChat?.user
-                : allUsers.find((user) => user.id === newChat.senderID),
+                : allUsers.find((user) => user?.id === newChat.senderID),
             chats: [newChat],
           } as UserChat;
           updatedUserChats?.unshift(currentUserChat);
@@ -228,7 +239,7 @@ export default function Chat() {
 
     socket.on(`typing:${currentUser?.id}`, ({ senderID, state = true }) => {
       console.log(senderID, state);
-      if (activeUserChat?.user.id === senderID) setIsTyping(state);
+      if (activeUserChat?.user?.id === senderID) setIsTyping(state);
     });
 
     socket.on(`seenChat:${currentUser?.id}`, (index) => {
@@ -269,9 +280,9 @@ export default function Chat() {
         return;
       }
       //move activeUserChat to top of list with updated messages
-      if (userChats.find((userChat) => userChat.user.id === activeUserChat.user.id)) {
+      if (userChats.find((userChat) => userChat.user?.id === activeUserChat.user.id)) {
         const updated = [...userChats];
-        const index = updated.findIndex((userChat) => userChat.user.id === activeUserChat.user.id);
+        const index = updated.findIndex((userChat) => userChat.user?.id === activeUserChat.user.id);
 
         if (index > 0) {
           updated.splice(index, 1); //delete from its current position
@@ -332,16 +343,27 @@ export default function Chat() {
     if (videoRef.current) initializeCamera(videoRef.current);
   }, [showCamera]);
 
-  const handleSendMessage = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // if (socket.connected && e.key === "Enter" && activeChatUser && currentUser && chatMessage) {
-    if (socket.connected && e.key === "Enter" && currentUser && chatMessage) {
-      e.preventDefault();
+  const handleSendMessage = async (
+    e: React.KeyboardEvent<HTMLSpanElement> | React.MouseEvent<HTMLButtonElement>
+  ) => {
+    if ("key" in e && e.key !== "Enter") return; // Ensure it's an Enter key event
 
-      if (chatMessageRef.current) chatMessageRef.current.textContent = "";
+    e.preventDefault(); // Prevents form submission (for input)
+
+    // if (socket.connected && e.key === "Enter" && activeChatUser && currentUser && chatMessage) {
+    if (socket.connected && currentUser && (chatMessage || (fileUploads as File[]).length > 0)) {
+      if (chatMessageRef.current)
+        chatMessageRef.current.textContent =
+          document.activeElement !== chatMessageRef.current ? "Enter message..." : "";
       console.log("sender", chatUsersID);
       const chatHistory = {
         receiverID: activeUserChat?.user.id,
-        newChatMessage: { senderID: currentUser.id, chatMessage: chatMessage, date: new Date() },
+        newChatMessage: {
+          senderID: currentUser.id,
+          chatMessage: chatMessage,
+          uploads: fileUploads,
+          date: new Date(),
+        } as ChatHistory,
         activeChatHistory: activeUserChat?.chats || [],
       };
 
@@ -361,6 +383,8 @@ export default function Chat() {
       //user input
       socket.emit("sendChat", chatHistory);
 
+      setFileUploads(null);
+      if (!chatMessage) return;
       //ai output
       if (chatMessage.startsWith("@t")) {
         const result = await askTacoDog(chatMessage);
@@ -416,7 +440,6 @@ export default function Chat() {
   };
 
   useEffect(() => {
-    console.log("grgrgrgrgr");
     if (messageContainerRef.current) {
       const height = messageContainerRef.current.scrollHeight - 630;
 
@@ -485,7 +508,9 @@ export default function Chat() {
 
   const handleSearchModal = (value: string) => {
     setSearchText(value);
-    setFilteredUsers(allUsers.filter((user) => user.username.toLowerCase().includes(value)));
+    setFilteredUsers(
+      allUsers.filter((user) => user?.username?.toLowerCase().includes(value.toLowerCase()))
+    );
   };
 
   const handleVideoCall = async () => {
@@ -494,7 +519,7 @@ export default function Chat() {
 
     if (videoRef.current) initializeCamera(videoRef.current);
 
-    console.log(activeUserChat?.user.id);
+    console.log(activeUserChat?.user?.id);
     socket.emit("call", {
       caller: currentUser,
       receiverID: activeUserChat?.user?.id,
@@ -572,13 +597,94 @@ export default function Chat() {
     }
   };
 
+  const handleEmojiClick = (emojiObject: any) => {
+    setChatMessage((prev) => prev + emojiObject.emoji);
+  };
+
+  useEffect(() => {
+    console.log(chatMessage);
+    if (chatMessageRef.current && chatMessage)
+      chatMessageRef.current.textContent = chatMessage || "";
+  }, [chatMessage]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+        setShowPicker(false);
+
+        // Move caret to the end of the chat input
+        if (chatMessageRef?.current) {
+          console.log("Attempting focus on:", chatMessageRef.current);
+
+          // Ensure span is focusable first
+          chatMessageRef.current.focus();
+
+          // Ensure selection moves to the end of the content
+          setTimeout(() => {
+            if (!chatMessageRef.current) return;
+            const range = document.createRange();
+            const selection = window.getSelection();
+
+            range.selectNodeContents(chatMessageRef.current);
+            range.collapse(false); // 👈 Moves cursor to end
+
+            selection?.removeAllRanges();
+            selection?.addRange(range);
+          }, 0);
+        }
+      }
+    }
+
+    if (showPicker) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showPicker]);
+
+  const [fileUploads, setFileUploads] = useState<File[] | null>(null);
+  const handleFileChange = (
+    event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLSpanElement>
+  ) => {
+    let files: FileList | null = null;
+
+    if ("files" in event.target && event.target.files) {
+      // If it's an input file change event
+      files = event.target.files;
+    } else if ("dataTransfer" in event && event.dataTransfer.files.length) {
+      // If it's a drag-and-drop event
+      files = event.dataTransfer.files;
+    }
+
+    if (!files || files.length === 0) return;
+
+    setFileUploads((prev) => {
+      const existingFiles = new Set(prev?.map((file) => file.name + file.size)); // Unique identifier
+      const newFiles = Array.from(files).filter(
+        (file) => !existingFiles.has(file.name + file.size)
+      );
+
+      return [...(prev || []), ...newFiles]; // Add only unique files
+    });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  useEffect(() => {
+    return () => {
+      fileUploads &&
+        Array.from(fileUploads).forEach((file) => URL.revokeObjectURL(URL.createObjectURL(file)));
+    };
+  }, [fileUploads]);
+
   return (
     <div className={`flex overflow-hidden h-screen w-screen `}>
       {/* {!activeChatUser ? ( */}
       {!activeUserChat ? (
         <div
           ref={helloRef}
-          className="duration-500 ease-out flex-col w-full h-full flex items-center text-[3.5rem] lg:text-[5rem] justify-center absolute z-[100]"
+          className="duration-500 ease-out flex-col w-full h-full flex items-center text-[2rem] lg:text-[5rem] justify-center absolute z-[100]"
         >
           <h2 className="flex-row flex items-end leading-none gap-2">
             Fetching
@@ -623,10 +729,10 @@ export default function Chat() {
 
             <ChatBanner activeChatUser={activeUserChat?.user as User} />
 
-            <div className="w-full  flex-1 mx-auto flex flex-col relative bg-[#eee] dark:bg-[#141a35]">
+            <div className="w-full  flex-1 mx-auto flex flex-col relative bg-[#eee] dark:bg-gray-900">
               <div
                 ref={helloRef}
-                className=" bg-white dark:bg-slate-950 duration-500 ease-out flex-col w-full h-full flex items-center text-[5rem] lg:text-[8rem] justify-center absolute z-[10]"
+                className=" bg-[#ebe8e4] dark:bg-slate-950 duration-500 ease-out flex-col w-full h-full flex items-center text-[5rem] lg:text-[8rem] justify-center absolute z-[10]"
               >
                 Helllow
               </div>
@@ -634,12 +740,12 @@ export default function Chat() {
               {!isLoading && (
                 <>
                   {/* chat header  bg-slate-500 bg-opacity-10 */}
-                  <div className=" bg-white shadow  dark:bg-slate-950 px-[25%] min-h-[13.6%] flex items-center justify-between   z-20 absolute w-full   backdrop-blur-md">
+                  <div className=" bg-[#ebe8e4] shadow border-b  dark:bg-slate-950 px-[15%] lg:px-[25%] min-h-[5rem] flex items-center justify-between   z-20 absolute w-full   backdrop-blur-md">
                     {isNewChat ? (
                       <div className="w-full flex gap-3">
                         <Button
                           onClick={handleNewChatClose}
-                          className=" select-none"
+                          className=" select-none text-muted-foreground"
                           variant={"secondary"}
                         >
                           X
@@ -647,7 +753,7 @@ export default function Chat() {
                         <Input
                           ref={searchRef}
                           placeholder="Search people..."
-                          className=" select-none p-5"
+                          className=" select-none p-5 bg-gray-500/10 placeholder:text-muted-foreground/50"
                           onFocus={() => setShowSearchModal(true)}
                           onChange={(e) => handleSearchModal(e.target.value)}
                         />
@@ -670,20 +776,20 @@ export default function Chat() {
                         <div className="flex gap-4 items-center">
                           {isVideoCallRinging && (
                             <>
-                              Ringing <Loader className="animate-spin " />
+                              <Loader className="animate-spin " />
                             </>
                           )}
                           {activeUserChat.user.username !== "TacoDog" &&
                             (showCamera ? (
                               <VideoOff
                                 onClick={() => handleVideoCallEnd()}
-                                size={iconSize}
+                                size={iconLarge}
                                 className="cursor-pointer"
                               />
                             ) : (
                               <Video
                                 onClick={handleVideoCall}
-                                size={iconSize}
+                                size={iconLarge}
                                 className="cursor-pointer"
                               />
                             ))}
@@ -697,8 +803,11 @@ export default function Chat() {
                   {/* chat body */}
                   <div
                     ref={messageContainerRef}
-                    className=" flex pb-0 p-5 px-[25%] w-full  mx-auto gap-5 h-full items-center justify-center scrollbar scroll-smooth flex-col overflow-y-scroll"
+                    className={` ${
+                      showCamera ? "justify-center" : "justify-end"
+                    } flex px-[15%] lg:px-[25%]  w-full  mx-auto gap-5 h-full items-center justify-center scrollbar scroll-smooth flex-col overflow-y-scroll`}
                   >
+                    <div className="h-[4rem]" />
                     {/* camera */}
                     {showCamera ? (
                       <video
@@ -706,10 +815,10 @@ export default function Chat() {
                         autoPlay
                         playsInline
                         controls={false}
-                        className="z-[48] mt-[8%]  aspect-video  "
+                        className="z-[48]  aspect-video  "
                       />
                     ) : (
-                      <div className="h-[32rem] relative w-[85%] flex flex-col gap-5 px-3  ">
+                      <div className=" h-[calc(100vh-14rem)] lg:h-[calc(100vh-19rem)]  relative w-full lg:w-[85%] flex flex-col gap-5 px-3  ">
                         {activeUserChat.chats && currentUser ? (
                           <ChatMessages
                             activeChatHistory={activeUserChat.chats}
@@ -718,15 +827,15 @@ export default function Chat() {
                             handleSeenMessage={handleSeenMessage}
                           />
                         ) : (
-                          <CardDescription className="h-full text-muted-secondary/40  text-center w-full flex text-base  flex-col justify-center items-center">
+                          <CardDescription className="select-none h-full text-muted-secondary/80 font-light  text-center w-full flex text-xs lg:text-base  flex-col justify-center items-center">
                             <Image
                               src={TacoDogLogo.src}
                               alt="tacodog logo"
                               width={300}
                               height={300}
-                              className=" w-32 aspect-square grayscale opacity-[.15]"
+                              className=" w-24 lg:w-32 aspect-square grayscale opacity-[.3]"
                             />
-                            <span className=" leading-tight">
+                            <span className="leading-tight">
                               Start your new chat by
                               <br />
                               <span>pinging TacoDog with &quot;@t&quot;</span>
@@ -746,21 +855,98 @@ export default function Chat() {
                     </div>
                   )}
 
-                  {/* chat input */}
-                  <div className="bg-white dark:bg-slate-950 px-[25%] bottom-[15.9%] h-[1.3rem] z-[40]  absolute w-full border-t backdrop-blur-lg "></div>
-                  <div className="bg-white dark:bg-slate-950 px-[25%] relative bottom-0 overflow-hidden h-[19%] flex gap-2 w-full  justify-center  mx-auto ">
-                    <span
-                      ref={chatMessageRef}
-                      onFocus={() => handleFocus()}
-                      onBlur={() => handleBlur()}
-                      onInput={(e) => setChatMessage((e.target as HTMLElement).textContent)}
-                      contentEditable
-                      className={`${
-                        chatMessage ? "text-white" : "text-muted-secondary/40"
-                      } max-h-28 px-4 h-fit py-2 overflow-y-auto scrollbar items-center inline-flex rounded border-2   w-full textarea`}
-                      role="textbox"
-                      onKeyDown={handleSendMessage}
+                  <div
+                    ref={pickerRef}
+                    className="absolute right-[7rem] lg:right-[25rem] bottom-[4rem] z-10"
+                  >
+                    <EmojiPicker
+                      open={showPicker}
+                      height={300}
+                      width={300}
+                      style={{ backgroundColor: "black" }}
+                      // className="bg-white"
+                      theme={Theme.AUTO}
+                      onEmojiClick={handleEmojiClick}
+                      previewConfig={{
+                        showPreview: false,
+                      }}
                     />
+                  </div>
+
+                  {/* chat input */}
+                  {/* <div className="bg-white dark:bg-slate-950 px-[25%] bottom-[15.9%] h-[1.3rem] z-[40]  absolute w-full border-t backdrop-blur-lg "></div> */}
+                  {/* <div className="bg-white dark:bg-slate-950 px-[25%] relative bottom-0 overflow-hidden h-[19%] flex gap-2 w-full  justify-center  mx-auto "> */}
+                  <div
+                    className={`${
+                      (fileUploads as File[])?.length > 0 ? "min-h-[10rem]" : "min-h-[5rem]"
+                    }`}
+                  ></div>
+                  <div
+                    className={`${
+                      (fileUploads as File[])?.length > 0 ? "min-h-[10rem]" : "min-h-[5rem]"
+                    } 
+                   border-t bg-[#ebe8e4] dark:bg-slate-950 px-[15%] lg:px-[27%] absolute bottom-0 flex flex-col gap-2 w-full items-start  justify-center  mx-auto 
+                  `}
+                  >
+                    {(fileUploads as File[])?.length > 0 && (
+                      <ImageUpload
+                        fileUploads={fileUploads as File[]}
+                        setFileUploads={setFileUploads}
+                      />
+                    )}
+                    <div className={`gap-2 flex w-full items-center h-fit relative `}>
+                      <span
+                        tabIndex={0}
+                        ref={chatMessageRef}
+                        onFocus={() => handleFocus()}
+                        onBlur={() => handleBlur()}
+                        onInput={(e) => setChatMessage((e.target as HTMLElement).textContent)}
+                        onDrop={(e) => handleFileChange(e)}
+                        contentEditable
+                        className={`${
+                          chatMessage ? "" : "text-muted-secondary/80"
+                        } max-h-12 flex-wrap break-all focus:outline-none focus:ring-0 focus:border-muted-foreground dark:bg-gray-500/10 bg-[white] px-4 h-fit py-2 overflow-y-auto scrollbar items-center inline-flex rounded-lg border  w-full textarea`}
+                        role="textbox"
+                        onKeyDown={handleSendMessage}
+                      />
+                      {/* <Image
+                      width={300}
+                      height={300}
+                      className="size-5 z-[10] absolute left-[60%]"
+                      src={EmojiIcon}
+                      alt="Emoji Icon"
+                      /> */}
+                      <button
+                        id="emoji-icon"
+                        className="cursor-pointer"
+                        onClick={() => setShowPicker(true)}
+                      >
+                        <EmojiIcon className="size-7 text-muted-secondary/80" />
+                      </button>
+
+                      <div className="h-fit flex self-center">
+                        <input
+                          type="file"
+                          className="hidden"
+                          onChange={handleFileChange}
+                          accept={".png,.jpg,.jpeg"}
+                          multiple
+                          ref={fileInputRef}
+                        />
+                        <button
+                          className="cursor-pointer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            fileInputRef.current?.click();
+                          }}
+                        >
+                          <AttachmentIcon className="size-7 text-muted-secondary/80" />
+                        </button>
+                      </div>
+                      <button className="cursor-pointer" onClick={handleSendMessage}>
+                        <SubmitIcon className="size-7 text-muted-secondary/80" />
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
@@ -771,3 +957,132 @@ export default function Chat() {
     </div>
   );
 }
+
+export function ImageUpload({
+  fileUploads,
+  setFileUploads,
+}: {
+  fileUploads: File[];
+  setFileUploads?: (value: File[]) => void;
+}) {
+  const [isImageHoverMap, setIsImageHoverMap] = useState<Record<number, boolean>>({});
+
+  return (
+    <div className={`  flex gap-1    `}>
+      {fileUploads.map((file, index) => {
+        return (
+          <div
+            key={index}
+            className="relative flex items-center justify-center"
+            onMouseEnter={() =>
+              setFileUploads && setIsImageHoverMap((prev) => ({ ...prev, [index]: true }))
+            }
+            onMouseLeave={() =>
+              setFileUploads && setIsImageHoverMap((prev) => ({ ...prev, [index]: false }))
+            }
+          >
+            <Image
+              width={300}
+              height={300}
+              src={URL.createObjectURL(file)}
+              alt={`uploaded image ${index}`}
+              className={` ${isImageHoverMap[index] === true ? "opacity-50" : "opacity-100"} ${
+                setFileUploads && "border bg-white/10"
+              }
+                                h-20 w-20 aspect-square rounded object-cover 
+                                `}
+            />
+            {isImageHoverMap[index] && setFileUploads && (
+              <button
+                className="cursor-pointer absolute"
+                onClick={() => setFileUploads(fileUploads.filter((_, i) => i !== index))}
+              >
+                <CloseIcon className="size-7 text-black/80 dark:text-white/80" />
+              </button>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const CloseIcon = ({ className }: { className: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="48"
+    className={className}
+    height="48"
+    viewBox="0 0 48 48"
+  >
+    <defs>
+      <mask id="ipSCloseOne0">
+        <g fill="none" strokeLinejoin="round" strokeWidth="4">
+          <path
+            fill="#fff"
+            stroke="#fff"
+            d="M24 44c11.046 0 20-8.954 20-20S35.046 4 24 4S4 12.954 4 24s8.954 20 20 20Z"
+          />
+          <path
+            stroke="#000"
+            strokeLinecap="round"
+            d="M29.657 18.343L18.343 29.657m0-11.314l11.314 11.314"
+          />
+        </g>
+      </mask>
+    </defs>
+    <path fill="currentColor" d="M0 0h48v48H0z" mask="url(#ipSCloseOne0)" />
+  </svg>
+);
+
+const EmojiIcon = ({ className }: { className: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+  >
+    <g fill="currentColor" fillRule="evenodd">
+      <path d="m12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035q-.016-.005-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093q.019.005.029-.008l.004-.014l-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z" />
+      <path
+        fill="#currentColor"
+        d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2m2.8 11.857A3.98 3.98 0 0 1 12 15a3.98 3.98 0 0 1-2.8-1.143a1 1 0 1 0-1.4 1.428A5.98 5.98 0 0 0 12 17a5.98 5.98 0 0 0 4.2-1.715a1 1 0 0 0-1.4-1.428M8.5 8a1.5 1.5 0 1 0 0 3a1.5 1.5 0 0 0 0-3m7 0a1.5 1.5 0 1 0 0 3a1.5 1.5 0 0 0 0-3"
+      />
+    </g>
+  </svg>
+);
+
+const SubmitIcon = ({ className }: { className: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    width="15"
+    height="16"
+    viewBox="0 0 15 16"
+  >
+    <path
+      fill="currentColor"
+      d="M12.49 7.14L3.44 2.27c-.76-.41-1.64.3-1.4 1.13l1.24 4.34q.075.27 0 .54l-1.24 4.34c-.24.83.64 1.54 1.4 1.13l9.05-4.87a.98.98 0 0 0 0-1.72Z"
+    />
+  </svg>
+);
+
+const AttachmentIcon = ({ className }: { className: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    className={className}
+    viewBox="0 0 24 24"
+  >
+    <path
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="M13.324 8.436L9.495 12.19c-.364.36-.564.852-.556 1.369a2 2 0 0 0 .6 1.387c.375.371.88.584 1.403.593a1.92 1.92 0 0 0 1.386-.55l3.828-3.754a3.75 3.75 0 0 0 1.112-2.738a4 4 0 0 0-1.198-2.775a4.1 4.1 0 0 0-2.808-1.185a3.85 3.85 0 0 0-2.77 1.098L6.661 9.39a5.63 5.63 0 0 0-1.667 4.107a6 6 0 0 0 1.798 4.161a6.15 6.15 0 0 0 4.21 1.778a5.77 5.77 0 0 0 4.157-1.646l3.829-3.756"
+    />
+  </svg>
+);

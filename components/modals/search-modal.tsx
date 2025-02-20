@@ -14,7 +14,7 @@ export default function SearchModal(props: SearchModalProps) {
     <div
       id="searchModal"
       // showSearchModalMini  ? "w-[100%] -left-[50%] translate-x-1/2"
-      className={`top-[25%] text-muted-foreground shadow-md rounded ml-8 p-3 gap-2 z-[40] flex flex-col bg-white dark:bg-slate-950 scrollbar  h-[30%] overflow-auto absolute w-full lg:w-[48%]  left-1/2 -translate-x-1/2`}
+      className={`top-[8.1rem] lg:top-[10.5rem] text-muted-foreground shadow-md rounded ml-7 p-3 gap-2 z-[40] flex flex-col bg-[#ebe8e4] dark:bg-slate-950 scrollbar  h-[14rem] overflow-auto absolute w-[60%] lg:w-[47%]  left-1/2 -translate-x-1/2`}
       tabIndex={-1} // Makes the div focusable
     >
       {searchText == "" && "People you might know"}
@@ -22,10 +22,10 @@ export default function SearchModal(props: SearchModalProps) {
         (searchText ? filteredUsers : filteredUsers.slice(0, 3)).map((user) => (
           <div
             onClick={() => {
-              handleSetActiveChat(user.id);
+              handleSetActiveChat(user?.id);
               // setActiveChatHistory(null);
             }}
-            key={user.id}
+            key={user?.id}
             className={`flex gap-3 hover:bg-muted 
                 hover:cursor-pointer p-2 rounded w-full items-center`}
           >
@@ -37,9 +37,9 @@ export default function SearchModal(props: SearchModalProps) {
                 className="aspect-square h-full w-full"
                 src={user?.avatar?.img as StaticImageData}
               />
-              <AvatarFallback>{user?.username[0]}</AvatarFallback>
+              <AvatarFallback>{user?.username?.[0]}</AvatarFallback>
             </Avatar>
-            <CardTitle className="text-lg font-light">{user.username}</CardTitle>
+            <CardTitle className="text-lg font-light">{user?.username}</CardTitle>
           </div>
         ))
       ) : (

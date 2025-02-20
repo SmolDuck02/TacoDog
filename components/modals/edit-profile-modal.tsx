@@ -62,7 +62,7 @@ export default function EditProfileModal() {
       <DialogTrigger asChild>
         <Button variant="default">Edit Profile</Button>
       </DialogTrigger>
-      <DialogContent className="w-[23rem] sm:max-w-[425px]">
+      <DialogContent id="editProfileModal" className=" w-[23rem] sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Edit profile</DialogTitle>
         </DialogHeader>

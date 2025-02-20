@@ -1,13 +1,7 @@
 "use client";
 
 import { User, UserChat } from "@/lib/types";
-import {
-  iconSize,
-  iconSizeSmall,
-  monthDateOptions,
-  timeOptions,
-  yearDateOptions,
-} from "@/lib/utils";
+import { iconMedium, monthDateOptions, timeOptions, yearDateOptions } from "@/lib/utils";
 import defaultAvatar from "@/public/avatars/defaultAvatar.png";
 import { Columns2, Search, SquarePen, X } from "lucide-react";
 import Image from "next/image";
@@ -40,7 +34,7 @@ export default function ChatSidebar(props: ChatSidebarProps) {
   const [isAccountSidebar, setAccountSidebar] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState<UserChat[] | User[] | null>(userChats);
   const [filter, setFilter] = useState<string | null>(null);
-  const searchRef = useRef<HTMLInputElement | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const handleSearch = () => {
     setIsChatSidebar("search");
@@ -61,51 +55,90 @@ export default function ChatSidebar(props: ChatSidebarProps) {
   useEffect(() => {
     if (filter) {
       const filtered = allUsers.filter((user) =>
-        user.username.toLowerCase().includes(filter.toLowerCase().trim())
+        user.username?.toLowerCase().includes(filter.toLowerCase().trim())
       );
       const filteredUserChats = filtered.map((user) => {
         const foundChat = userChats.find((userChat) => userChat.user.id === user.id);
         return foundChat ? foundChat : { user: user, chats: null };
       });
-      console.log("yyy", filtered, userChats, filteredUserChats);
       setFilteredUsers(filteredUserChats.length > 0 ? filteredUserChats : null);
     } else {
       setFilteredUsers(userChats);
     }
   }, [filter, allUsers, userChats]);
 
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleClose(event: MouseEvent) {
+      if (
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target as Node) &&
+        !document.getElementById("profileModal")?.contains(event.target as Node) &&
+        !document.getElementById("editProfileModal")?.contains(event.target as Node)
+      ) {
+        setIsChatSidebar(false);
+      }
+    }
+
+    if (isChatSidebar) {
+      document.addEventListener("mousedown", handleClose);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClose);
+    };
+  }, [isChatSidebar]);
+
   return (
     <div
-      className={` z-[49] backdrop-blur-xl bg-white/20 dark:bg-slate-950/10  h-screen absolute left-0  max-w-[17rem]  ${
-        isChatSidebar ? "w-full shadow-2xl brightness-125 " : "w-[5rem]"
+      ref={sidebarRef}
+      className={`z-[49]    h-screen absolute left-0  max-w-[17rem]  ${
+        isChatSidebar ? "w-full shadow-2xl border-r " : "w-[4rem]"
       } `}
+      // onBlur={(event) => {
+      //   console.log("ddw", event.relatedTarget, document.activeElement);
+      //   if (!event.currentTarget.contains(event.relatedTarget)) {
+      //     setIsChatSidebar(false);
+      //   }
+      // }}
     >
       <div className="w-full  h-full flex flex-col">
         <CardTitle
-          className={`p-3 drop-shadow-lg h-[13%] text-black dark:text-[#ddd]  flex items-end text-5xl  ${
-            isChatSidebar ? "justify-start px-6" : "justify-center"
+          className={`p-3 drop-shadow-xl  brightness-150 h-[3rem] lg:min-h-[5.5rem] text-[#ebe8e4]  flex items-center text-3xl lg:text-5xl  ${
+            isChatSidebar
+              ? "justify-start px-4 bg-slate-950/10"
+              : "justify-center bg-gradient-to-r  from-black/15 via-black/10 to-transparent"
           } `}
         >
-          <span>{isChatSidebar ? "\\tacodog" : "\\t"}</span>
+          <span>{isChatSidebar ? "tacodog/" : "T"}</span>
         </CardTitle>
 
         <div
-          className={` flex flex-col h-[12%] shadow gap-2  z-[10] text-muted-foreground justify-center items-center p-3 px-[18px]    `}
+          className={`${
+            !isChatSidebar ? "gap-2" : "bg-[#ebe8e4] dark:bg-slate-950"
+          } flex  flex-col min-h-[5rem] border-b   z-[10] text-muted-foreground justify-center items-center  px-3    `}
         >
           <div
-            className={`text-2xl px-1 relative flex w-full items-center  ${
-              isChatSidebar ? "justify-between text-[#222] dark:text-[#bbb] " : "justify-center"
+            className={`text-xl   px-1 relative flex w-full items-center  ${
+              isChatSidebar ? "justify-between pl-2 " : "justify-center"
             } `}
           >
-            {isChatSidebar && <span className={`flex relative bottom-[-0.3rem]`}>Chats</span>}
-            <SquarePen size={iconSize} className="cursor-pointer" onClick={() => handleNewChat()} />
+            {isChatSidebar && <span>Chats</span>}
+            <SquarePen
+              size={iconMedium}
+              className="cursor-pointer"
+              onClick={() => {
+                setIsChatSidebar(false);
+                handleNewChat();
+              }}
+            />
           </div>
 
           {isChatSidebar ? (
-            <div className="relative  flex gap-2 w-full justify-end items-center">
+            <div className="relative  flex gap-2 w-full  justify-end items-center">
               <Input
                 ref={searchRef}
-                className={` placeholder:text-muted-foreground/70 dark:bg-white/10 bg-black/10 pr-8`}
+                className={` focus:ring-none bg-secondary placeholder:text-muted-foreground/50 dark:bg-gray-500/10 bg-[white] pr-8`}
                 onFocus={handleNewChatClose}
                 placeholder="Find people..."
                 value={filter || ""}
@@ -116,19 +149,19 @@ export default function ChatSidebar(props: ChatSidebarProps) {
 
               {filter ? (
                 <X
-                  size={iconSizeSmall}
-                  className="absolute text-slate-500 mr-2 cursor-pointer"
+                  size={iconMedium}
+                  className="absolute text-muted-foreground/50 mr-1 cursor-pointer"
                   onClick={() => setFilter("")}
                 />
               ) : (
                 <Search
-                  size={iconSizeSmall}
-                  className="absolute text-slate-500 mr-2 cursor-pointer"
+                  size={iconMedium}
+                  className="absolute text-muted-foreground/50 mr-1 cursor-pointer"
                 />
               )}
             </div>
           ) : (
-            <Search size={iconSize} className=" cursor-pointer" onClick={handleSearch} />
+            <Search size={iconMedium} className=" cursor-pointer" onClick={handleSearch} />
           )}
         </div>
 
@@ -136,7 +169,9 @@ export default function ChatSidebar(props: ChatSidebarProps) {
         <div
           tabIndex={-1}
           // #07101f
-          className={` flex-1 gap-2 pt-4 flex w-full scrollbar overflow-auto flex-col px-3`}
+          className={`${
+            isChatSidebar ? "bg-white dark:bg-slate-950 lg:bg-white/20 lg:dark:bg-gray-900/20" : ""
+          }  flex-1 gap-2 pt-4 flex w-full scrollbar overflow-auto flex-col px-3`}
         >
           {filteredUsers ? (
             filteredUsers.map((userChat, index: number) => {
@@ -196,17 +231,13 @@ export default function ChatSidebar(props: ChatSidebarProps) {
                     onClick={() => {
                       handleSetActiveChat(user?.id);
                       setFilter(null);
+                      window.innerWidth < 1000 && setIsChatSidebar(false);
                     }}
                     className={`flex gap-3 hover:cursor-pointer p-2 px-[10px] rounded items-center  w-full ${
                       isChatSidebar ? " justify-start" : "justify-center"
                     } ${
                       !filter &&
-                      (isActiveChat
-                        ? `font-bold ${
-                            //condiitonal brightness because text become more brighter than image
-                            !isChatSidebar ? "brightness-125" : "brightness-90"
-                          } backdrop-blur-xl `
-                        : "brightness-[.5] font-light")
+                      (isActiveChat ? `font-bold backdrop-blur-xl ` : "brightness-[.5] font-light")
                     } `}
                   >
                     <Avatar className="h-9 w-9 ">
@@ -214,7 +245,7 @@ export default function ChatSidebar(props: ChatSidebarProps) {
                         alt="User Avatar"
                         height={300}
                         width={300}
-                        className="aspect-square h-full w-full"
+                        className={`aspect-square h-full w-full `}
                         src={user?.avatar?.img || defaultAvatar}
                       />
                     </Avatar>
@@ -246,18 +277,22 @@ export default function ChatSidebar(props: ChatSidebarProps) {
 
         {/* profile modal button */}
         <div
-          className={` ${isChatSidebar ? "flex-row  items-start" : "flex-col items-center"}
-           flex justify-start gap-1 p-2 px-[14px] h-32`}
+          className={` ${
+            isChatSidebar
+              ? "flex-row   items-end justify-center h-[5rem] bg-[#ebe8e4] dark:bg-slate-950"
+              : "flex-col gap-6 items-center justify-end h-fit pt-4"
+          }
+           flex  text-muted-foreground  pb-4 px-[14px] `}
         >
           <ProfileModal isChatSidebar={isChatSidebar as boolean} />
-          {!isAccountSidebar && (
-            <span
-              onClick={toggleChatSidebar}
-              className="h-12 w-12 rounded-full p-3 hover:bg-muted flex justify-center items-center cursor-pointer"
-            >
-              <Columns2 size={iconSize} />
-            </span>
-          )}
+
+          <button
+            tabIndex={0}
+            onClick={toggleChatSidebar}
+            className="h-12 w-12 rounded-full p-3 hover:bg-muted flex justify-center items-center cursor-pointer"
+          >
+            <Columns2 size={iconMedium} />
+          </button>
         </div>
       </div>
     </div>

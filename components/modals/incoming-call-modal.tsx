@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "@/lib/types";
-import { iconSize } from "@/lib/utils";
+import { iconLarge } from "@/lib/utils";
 import defaultAvatar from "@/public/avatars/defaultAvatar.png";
 import { PhoneCall, X } from "lucide-react";
 import Image from "next/image";
@@ -44,14 +44,14 @@ export function IncomingCallModal({
               variant="default"
               className="rounded-full h-14 w-14  aspect-square bg-green-500 hover:bg-green-700 "
             >
-              <PhoneCall size={iconSize} className=" cursor-pointer" />
+              <PhoneCall size={iconLarge} className=" cursor-pointer" />
             </Button>
             <Button
               onClick={() => handleVideoCallReject(caller?.id)}
               variant="secondary"
               className=" hover:brightness-75 rounded-full h-14 w-14  aspect-square "
             >
-              <X size={iconSize} className="cursor-pointer" />
+              <X size={iconLarge} className="cursor-pointer" />
             </Button>
           </div>
         </CardHeader>

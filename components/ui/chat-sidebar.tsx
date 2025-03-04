@@ -182,7 +182,7 @@ export default function ChatSidebar(props: ChatSidebarProps) {
               const lastMessage = chats.at(-1);
               const isAuthor = lastMessage?.senderID === currentUserID;
               // console.log("heyhey", user, lastMessage, chats, filteredUsers);
-              const isActiveChat = activeChatUser.id === user?.id;
+              const isActiveChat = activeChatUser?.id === user?.id;
               const callMessage = (isAuthor ? "You" : user.username) + " Called";
               const chatMessage = isAuthor
                 ? `You: ${chats?.at(-1)?.chatMessage}`
@@ -197,48 +197,49 @@ export default function ChatSidebar(props: ChatSidebarProps) {
                   : yearDateOptions;
 
               const date = new Date(lastMessage?.date || "").toLocaleString("en-US", options);
+              const chatAuthor = allUsers.find((user) => user.id === lastMessage?.senderID);
 
               return (
-                <div key={index} className="relative flex items-center">
+                <div
+                  key={index}
+                  className="relative flex hover:bg-gray-800 rounded items-center"
+                  onClick={() => {
+                    handleSetActiveChat(user?.id);
+                    setFilter(null);
+                    window.innerWidth < 1000 && setIsChatSidebar(false);
+                  }}
+                >
                   {lastMessage && (
                     <>
                       {!lastMessage.isSeen && !isAuthor && (
                         <span
                           className={`bg-amber-400 z-10 absolute ${
-                            isChatSidebar ? "right-3" : "-right-1"
+                            isChatSidebar ? "right-3" : "-right-3"
                           } w-2 h-2 aspect-square rounded-full`}
                         />
                       )}
-                      {lastMessage.isSeen && isAuthor && (
-                        <div
-                          className={`${isChatSidebar && !filter ? "right-3 " : "hidden"} ${
-                            isActiveChat ? "brightness-125" : "brightness-50"
-                          } absolute h-4 w-4 `}
-                        >
-                          <Image
-                            alt="User Avatar"
-                            height={300}
-                            width={300}
-                            className="aspect-square rounded-full h-full w-full"
-                            src={activeChatUser?.avatar?.img || defaultAvatar}
-                          />
-                        </div>
-                      )}
                     </>
+                  )}
+                  {lastMessage && isAuthor && (
+                    <div
+                      className={`${isChatSidebar && !filter ? "right-3 " : "hidden"} ${
+                        isActiveChat ? "brightness-125" : "brightness-50"
+                      } absolute h-4 w-4 `}
+                    >
+                      <Image
+                        alt="User Avatar"
+                        height={300}
+                        width={300}
+                        className="aspect-square rounded-full h-full w-full"
+                        src={user.avatar?.img || defaultAvatar}
+                      />
+                    </div>
                   )}
 
                   <div
-                    onClick={() => {
-                      handleSetActiveChat(user?.id);
-                      setFilter(null);
-                      window.innerWidth < 1000 && setIsChatSidebar(false);
-                    }}
                     className={`flex gap-3 hover:cursor-pointer p-2 px-[10px] rounded items-center  w-full ${
                       isChatSidebar ? " justify-start" : "justify-center"
-                    } ${
-                      !filter &&
-                      (isActiveChat ? `font-bold backdrop-blur-xl ` : "brightness-[.5] font-light")
-                    } `}
+                    } ${!filter && (isActiveChat ? `font-bold  ` : "brightness-[.5] font-light")} `}
                   >
                     <Avatar className="h-9 w-9 ">
                       <Image

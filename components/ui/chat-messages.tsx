@@ -1,7 +1,8 @@
 import { ImageUpload } from "@/app/chat/page";
 import { ChatHistory, User } from "@/lib/types";
-import { monthDateOptions, timeOptions, yearDateOptions } from "@/lib/utils";
+import { iconLarge, monthDateOptions, timeOptions, yearDateOptions } from "@/lib/utils";
 import { Label } from "@radix-ui/react-label";
+import { PhoneOffIcon } from "lucide-react";
 import Image, { StaticImageData } from "next/image";
 import { useEffect } from "react";
 import { Avatar, AvatarFallback } from "./avatar";
@@ -51,15 +52,16 @@ export default function ChatMesages({
       handleMouseHover(event.currentTarget as Element, "enter");
     const handleMouseLeave = (event: Event) => handleMouseHover(event.currentTarget as Element);
 
-    chatElements.forEach((chat) => {
+    chatElements.forEach((chat, index) => {
       // observer.observe(chat);
-      if (!chat.classList.contains("video")) {
+      if (index !== chatElements.length - 1) {
         chat.addEventListener("click", handleClick);
         chat.addEventListener("mouseenter", handleMouseEnter);
         chat.addEventListener("mouseleave", handleMouseLeave);
       }
     });
 
+    
     const lastChat = chatElements[chatElements.length - 1];
     if (
       lastChat &&
@@ -90,7 +92,7 @@ export default function ChatMesages({
     return `${hours > 0 ? hours + "h" : ""} ${minutes > 0 ? minutes + "m" : ""} ${seconds}s`;
   }
   return (
-    <>
+    <div className="pb-8">
       {/* empty div for padding*/}
       {/* <div className="min-h-[3rem] "></div> */}
 
@@ -100,7 +102,7 @@ export default function ChatMesages({
         if (!message) return;
         const {
           senderID,
-          start,
+          start = 0,
           end,
           isSeen = false,
           isDelivered = false,
@@ -121,30 +123,54 @@ export default function ChatMesages({
 
         const date = new Date(message.date).toLocaleString("en-US", options);
         const isLastMessage = message === activeChatHistory.at(-1);
-
         return (
           <div
             key={index}
-            className={` flex w-full gap-4  items-end ${
-              isAuthor ? "justify-end pl-1/5" : "pr-1/5"
-            } ${!chatMessage && "self-center"} `}
+            className={` flex w-full gap-4  items-center  ${
+              isAuthor ? "justify-end pl-1/5" : "pr-1/5 justify-start"
+            } `}
           >
             {!chatMessage && !uploads ? (
-              <div className="text-sm text-muted-secondary gap-4 flex justify-center items-center  text-center py-2">
-                <span className="w-4 bg-muted-secondary/50 h-[0.1rem] rounded" />
-                <div id={index.toString()} className="video chatMessage flex flex-col">
-                  <span>
-                    {senderID == currentUser.id ? "You" : activeChatUser.username} Called &#x2022;{" "}
-                    {duration}
-                  </span>
-                  <span className="text-xs">
-                    {/* {new Date(message.date).toLocaleString("en-US", dateTimeOptions)} */}
-                    {date}
-                  </span>
-                </div>
-                <span className="w-4 bg-muted-secondary/50 h-[0.1rem] rounded" />
+              // <div className="text-sm text-muted-secondary gap-4 flex justify-center items-center  text-center py-2">
+              <div>
+                <CardContent
+                  id={index.toString()}
+                  key={index}
+                  className={`
+                  chatMessage flex-wrap break-all z-[10] bg-[#ebe8e4] dark:bg-slate-950 text-justify shadow border py-4 px-3 flex items-start  rounded-lg
+                  `}
+                >
+                  {/* <span className="w-4 bg-muted-secondary/50 h-[0.1rem] rounded" /> */}
+                  <div id={index.toString()} className="video  flex  gap-2  items-center">
+                    <span className="p-2 bg-[#ebe8e4]/10 rounded-full ">
+                      <PhoneOffIcon
+                        size={iconLarge}
+                        className={` ${!start ? "text-red-800" : ""}`}
+                      />
+                    </span>
+                    <span className="flex flex-col w-fit">
+                      {!start
+                        ? "Missed Call"
+                        : `${senderID === currentUser.id ? "You" : activeChatUser.username} Called`}
+
+                      {Boolean(start) && (
+                        <span className="tex-xs text-muted-secondary">{duration}</span>
+                      )}
+                    </span>
+                  </div>
+                  {/* <span className="w-4 bg-muted-secondary/50 h-[0.1rem] rounded" /> */}
+                </CardContent>
+                <Label
+                  className={`${isAuthor ? "justify-end " : "justify-start"}  ${
+                    isLastMessage ? "opacity-100 -bottom-4" : "opacity-0  bottom-0"
+                  }  flex px-2 text-xs`}
+                >
+                  {/* {new Date(message.date).toLocaleString("en-US", dateTimeOptions)} */}
+                  {date}
+                </Label>
               </div>
             ) : (
+              // </div>
               <>
                 {!isAuthor && (
                   <Avatar className="mb-1 z-0">
@@ -181,9 +207,9 @@ export default function ChatMesages({
                       {chatMessage}
                     </CardContent>
                   )}
-                  
+
                   {uploads && <ImageUpload fileUploads={uploads} />}
-                  
+
                   {isSeen && isLastMessage && isAuthor ? (
                     <div className="activeUserAvatar absolute w-fit -bottom-1 -right-1  z-10">
                       <Image
@@ -201,7 +227,7 @@ export default function ChatMesages({
                       }  ease-out duration-300 transition-all  absolute
                    text-[10px] text-muted-foreground`}
                     >
-                      Delivered • {date}
+                      {isLastMessage && isAuthor && (isSeen ? "Seen •" : "Delivered •")} {date}
                     </Label>
                   )}
                 </div>
@@ -214,6 +240,6 @@ export default function ChatMesages({
       {/* empty div for padding */}
       <div className="min-h-1 "></div>
       {/* <div className="min-h-5 "></div> */}
-    </>
+    </div>
   );
 }

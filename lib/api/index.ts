@@ -54,12 +54,12 @@ export async function registerUser(formData: User) {
 export async function getAllUsers() {
   try {
     const cachedUsers = await redis.get("cachedUsers");
-
+    
     if (cachedUsers) {
       console.log("Returning cached users...");
       return cachedUsers as User[];
     }
-
+    
     const keys = await redis.keys("user:*");
     const values: User[] = await redis.mget(...keys);
 

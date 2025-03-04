@@ -28,6 +28,7 @@ export default function Chat() {
   const [userChats, setUserChats] = useState<UserChat[] | null>(null);
   const [activeUserChat, setActiveUserChat] = useState<UserChat | null>(null);
   const [chatUsersID, setChatUsersID] = useState<string | null>();
+  const [callerID, setCallerID] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
   const [activeChatHistory, setActiveChatHistory] = useState<ChatHistory[] | null>(null);
   const [chatMessage, setChatMessage] = useState<string | null>();
@@ -138,13 +139,13 @@ export default function Chat() {
 
       if (seenChat?.isSeen) return;
 
-      console.log("fefehhf");
+
       //fuck this took a long time
       //and even longer because this is wrong
       seenChat = { ...seenChat, isSeen: true };
       const chatTop = userChats?.[0] as UserChat;
       chatTop.chats?.splice((isNewChat.chats?.length || 1) - 1, 1, seenChat);
-      console.log("jol", seenChat, chatTop, userChats);
+  
 
       socket.emit("seenChat", {
         senderID: seenChat.senderID,
@@ -161,6 +162,7 @@ export default function Chat() {
   };
 
   // TODO fix video call time
+  // TODO implement delivered
   // TODO implement deliver and emoji, and image sharing
   // TODO clean code
   useEffect(() => {
@@ -183,7 +185,6 @@ export default function Chat() {
           } as UserChat;
           updatedUserChats?.unshift(currentUserChat);
           console.log("gano", updatedUserChats);
-          setActiveUserChat(currentUserChat);
           setUserChats(updatedUserChats);
           return;
         }
@@ -197,12 +198,10 @@ export default function Chat() {
         }
         // const updatedUserChats = [...userChats]
 
-        console.log("plplp");
         // setActiveUserChat(updated);
         return;
       }
       if (activeUserChat) {
-        console.log("ri");
         setActiveUserChat({
           ...activeUserChat,
           chats: [...(activeUserChat.chats || []), newChat],
@@ -213,9 +212,10 @@ export default function Chat() {
       // setActiveChatHistory([...(activeChatHistory || []), value]);
     });
 
-    socket.on(`receiveCall:${currentUser?.id}`, (value) => {
-      console.log("Incoming caller", value);
-      setIncomingCall(value);
+    socket.on(`receiveCall:${currentUser?.id}`, (caller) => {
+      console.log("Incoming caller", caller);
+      setIncomingCall(caller);
+      setCallerID(caller.id);
     });
 
     socket.on(`acceptCall`, ({ callerID, receiverID }) => {
@@ -269,7 +269,6 @@ export default function Chat() {
 
   const updateUserChats = useCallback(
     (activeUserChatHistory: ChatHistory[], newChat?: ChatHistory) => {
-      console.log("jyjyjyj");
 
       if (!userChats || !activeUserChat) return;
 
@@ -351,7 +350,7 @@ export default function Chat() {
     e.preventDefault(); // Prevents form submission (for input)
 
     // if (socket.connected && e.key === "Enter" && activeChatUser && currentUser && chatMessage) {
-    if (socket.connected && currentUser && (chatMessage || (fileUploads as File[]).length > 0)) {
+    if (socket.connected && currentUser && (chatMessage || (fileUploads as File[])?.length > 0)) {
       if (chatMessageRef.current)
         chatMessageRef.current.textContent =
           document.activeElement !== chatMessageRef.current ? "Enter message..." : "";
@@ -516,13 +515,14 @@ export default function Chat() {
   const handleVideoCall = async () => {
     setIsVideoCallRinging(true);
     setShowCamera(true);
+    setCallerID(currentUser?.id as string);
 
     if (videoRef.current) initializeCamera(videoRef.current);
 
     console.log(activeUserChat?.user?.id);
     socket.emit("call", {
-      caller: currentUser,
       receiverID: activeUserChat?.user?.id,
+      caller: currentUser,
     });
   };
 
@@ -546,32 +546,33 @@ export default function Chat() {
       socket.emit("rejectCall", activeUserChat?.user?.id);
       // socket.emit("rejectCall", activeChatUser?.id);
 
-      if (callDuration && activeUserChat) {
-        const chatHistory = {
-          receiverID: activeUserChat?.user?.id,
-          newChatMessage: {
-            type: "call",
-            senderID: activeUserChat.user.id,
-            start: callDuration.start,
-            end: new Date().getTime(),
-            date: callDuration.date,
-          },
-          activeChatHistory: activeChatHistory || [],
-        };
+      // if (callDuration && activeUserChat) {
+      const chatHistory = {
+        receiverID: callerID === currentUser?.id ? activeUserChat?.user?.id : currentUser?.id,
+        newChatMessage: {
+          type: "call",
+          senderID: callerID as string,
+          start: callDuration?.start || 0,
+          end: new Date().getTime(),
+          date: callDuration?.date || new Date(),
+        },
+        activeChatHistory: activeChatHistory || [],
+      };
 
-        console.log("llololol", activeUserChat);
-        if (activeUserChat) {
-          setActiveUserChat({
-            ...activeUserChat,
-            chats: [...(activeUserChat.chats || []), chatHistory.newChatMessage],
-          });
-        }
-
-        updateUserChats(activeUserChat?.chats as ChatHistory[], chatHistory.newChatMessage);
-
-        socket.emit("sendChat", chatHistory);
+      console.log("llololol", chatHistory, activeUserChat);
+      if (activeUserChat) {
+        setActiveUserChat({
+          ...activeUserChat,
+          chats: [...(activeUserChat.chats || []), chatHistory.newChatMessage],
+        });
       }
+
+      updateUserChats(activeUserChat?.chats as ChatHistory[], chatHistory.newChatMessage);
+
+      socket.emit("sendChat", chatHistory);
+      setCallerID(null);
     }
+    // }
   };
 
   const handleVideoCallReject = useCallback((callerID: string) => {
@@ -767,11 +768,13 @@ export default function Chat() {
                               height={300}
                               width={300}
                               className="aspect-square h-full w-full"
-                              src={activeUserChat.user.avatar?.img as StaticImageData}
+                              src={activeUserChat.user?.avatar?.img as StaticImageData}
                             />
-                            <AvatarFallback>{activeUserChat.user.username[0]}</AvatarFallback>
+                            <AvatarFallback>{activeUserChat.user?.username[0]}</AvatarFallback>
                           </Avatar>
-                          <CardTitle className="text-3xl">{activeUserChat.user.username}</CardTitle>
+                          <CardTitle className="text-3xl">
+                            {activeUserChat.user?.username}
+                          </CardTitle>
                         </div>
                         <div className="flex gap-4 items-center">
                           {isVideoCallRinging && (
@@ -779,7 +782,7 @@ export default function Chat() {
                               <Loader className="animate-spin " />
                             </>
                           )}
-                          {activeUserChat.user.username !== "TacoDog" &&
+                          {![TacoDog.id, currentUser?.id].includes(activeUserChat.user?.id) &&
                             (showCamera ? (
                               <VideoOff
                                 onClick={() => handleVideoCallEnd()}
@@ -818,7 +821,7 @@ export default function Chat() {
                         className="z-[48]  aspect-video  "
                       />
                     ) : (
-                      <div className=" h-[calc(100vh-14rem)] lg:h-[calc(100vh-19rem)]  relative w-full lg:w-[85%] flex flex-col gap-5 px-3  ">
+                      <div className=" h-[calc(100vh-14rem)] lg:h-[calc(100vh-19rem)]  relative w-full lg:w-[85%] flex flex-col gap-2 px-3  ">
                         {activeUserChat.chats && currentUser ? (
                           <ChatMessages
                             activeChatHistory={activeUserChat.chats}

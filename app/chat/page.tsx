@@ -9,6 +9,7 @@ import ChatMessages from "@/components/ui/chat-messages";
 import ChatSidebar from "@/components/ui/chat-sidebar";
 import { Input } from "@/components/ui/input";
 import { askTacoDog, getAllUsers, getUserChats } from "@/lib/api";
+import { useUsers } from "@/lib/context/UserContext";
 import { socket } from "@/lib/socketClient";
 import { ChatHistory, User, UserChat } from "@/lib/types";
 import { iconLarge, initializeCamera, TacoDog } from "@/lib/utils";
@@ -23,7 +24,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export default function Chat() {
   const router = useRouter();
   const { user } = (useSession().data ?? { user: null }) as { user: User | null };
+  const { users }  = useUsers();
   const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userChats, setUserChats] = useState<UserChat[] | null>(null);
   const [activeUserChat, setActiveUserChat] = useState<UserChat | null>(null);
@@ -34,7 +38,6 @@ export default function Chat() {
   const [chatMessage, setChatMessage] = useState<string | null>();
   const [isNewChat, setIsNewChat] = useState(false);
   const [incomingCall, setIncomingCall] = useState<User | null>(null);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showSearchModalMini, setShowSearchModalMini] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,37 +54,17 @@ export default function Chat() {
   const chatMessageRef = useRef<HTMLSpanElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
 
-  // useEffect(() => {
-  //   if (!user) return;
-  //   console.log(user);
-  //   setCurrentUser(user as User);
-  // }, [user]);
-
   useEffect(() => {
+    if(users){
+      setAllUsers(users)
+      setFilteredUsers(users)
+    }
+
     if (user) {
       const id = user.id;
       console.log("fetching", user);
 
       setCurrentUser(user as User);
-
-      getAllUsers()
-        .then((response) => {
-          if (response) {
-            setAllUsers(response); //whole user database
-            setFilteredUsers(response); //meaning both the search filters and userChats with other users
-
-            // getActiveChatHistory(`_0_${id}_`).then((chatHistory) => {
-            //   if (chatHistory) {
-            //     setActiveChatHistory(chatHistory);
-            //   } else {
-            //     fade();
-            //   }
-            //   setActiveChatUser(response.find((user) => user.id == "0") as User);
-            // });
-          }
-        })
-        .catch((error) => console.log("error fetching all users: ", error))
-        .finally(() => console.log("done fetching all users"));
 
       getUserChats(id)
         .then((userChatsResponse) => {
@@ -104,7 +87,7 @@ export default function Chat() {
         .finally(() => console.log("done fetching user chats"));
       console.log("User:", user.username);
     }
-  }, []);
+  }, [user, users]);
 
   const handleNewChat = useCallback(() => {
     setSearchText("");

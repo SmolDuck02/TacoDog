@@ -36,12 +36,13 @@ export default function EditProfileModal() {
       avatar: avatarSelected,
     };
 
+    const formData = JSON.stringify({user: updatedUser, mode: "update"});
+
     saveProfileChanges(updatedUser as User);
     console.log(session?.user, updatedUser);
 
     signIn("credentials", {
-      formData: JSON.stringify(updatedUser),
-      mode: "update",
+      data: formData,
       redirect: false,
     })
       .then((response) => {

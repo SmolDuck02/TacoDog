@@ -6,14 +6,18 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 
+type CredentialsData = { data: string };
+
 const bcrypt = require("bcrypt");
 const redis = Redis.fromEnv();
+
 export const options: NextAuthOptions = {
   adapter: UpstashRedisAdapter(redis),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+
       async profile(profile) {
         const existingUser = await redis.get(`user:${profile.sub}`);
 
@@ -28,7 +32,6 @@ export const options: NextAuthOptions = {
           banner: banners[Math.floor(Math.random() * 10) % banners.length],
           ...profile,
         };
-        console.log("geyty", newUser);
 
         await redis.set(`user:${profile.sub}`, newUser);
         return newUser;
@@ -39,37 +42,40 @@ export const options: NextAuthOptions = {
       credentials: {},
 
       async authorize(credentials) {
-        const { formData, mode } = credentials as { mode: string; formData: string };
-        const { username, password } = JSON.parse(formData);
+        const { data } = credentials as CredentialsData;
+        const { user, mode = "auth", allUsers = [] } = JSON.parse(data);
+        const { username, password } = user;
+
+        if (allUsers.length === 0) throw new Error("No users in the database");
 
         try {
           if (mode === "update") {
-            return JSON.parse(formData) as User;
+            return user as User;
           } else {
-            let users = await redis.keys(`user:*`);
-
-            if (users.length == 0) throw new Error("No users in the database");
-
-            const values: User[] = await redis.mget(...users);
-            const user = values.find((value) => {
-              return value.username == username;
+            const matchedUsernames = allUsers.filter((userItem: User) => {
+              return userItem.username === username;
             });
 
-            console.log("Found Username match", user?.username);
-
-            if (!user) {
+            if (matchedUsernames.length === 0) {
               throw new Error("User not found!");
             }
 
-            const passwordMatch = await bcrypt.compare(password, user.password);
-            if (!passwordMatch) throw new Error("Password Incorrect!");
+            const matchedUsernamesID = matchedUsernames.map((userItem: User) => `user:${userItem.id}`);
+            const matchedUsers = await redis.mget(...matchedUsernamesID) as User[];
+            let foundUser: User | null = null;
+            
+            for (const userItem of matchedUsers) {
+              if (await bcrypt.compare(password, userItem.password)) {
+                foundUser = userItem;
+                break;
+              }
+            }
 
-            console.log("Logging in: Success Found user: ", user.username);
+            if (!foundUser) throw new Error("Password Incorrect!");
 
-            return user as User;
+            return foundUser as User;
           }
         } catch (error) {
-          console.log(`${mode} catch error:`, error);
           throw error;
         }
       },

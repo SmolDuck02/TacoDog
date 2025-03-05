@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerUser } from "@/lib/api";
+import { useUsers } from "@/lib/context/UserContext";
 import { RegistrationError, type User } from "@/lib/types";
 import { iconSmall } from "@/lib/utils";
 import GoogleIcon from "@/public/icons/flat-color-icons--google.svg";
@@ -16,8 +17,9 @@ import { toast } from "sonner";
 
 export default function Register() {
   const router = useRouter();
+  const { users: allUsers, isLoading } = useUsers();
   const { data: session } = useSession();
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isError, setIsError] = useState<RegistrationError>({ show: false });
   const [isValid, setIsValid] = useState<RegistrationError>({ show: false });
@@ -94,22 +96,20 @@ export default function Register() {
     e.preventDefault();
     setIsError({ show: false });
     if (formData.username && formData.password && confirmPassword) {
-      setIsLoading(true);
+      setIsButtonLoading(true);
       registerUser(formData)
         .then((response) => {
           if (response.error) {
             setIsError({ show: true, message: response.error });
-            setIsLoading(false);
           } else {
             toast("Registration Successful!");
             setMode("Sign In");
-            setIsLoading(false);
           }
         })
         .catch((error) => {
           setIsError({ show: true, message: error.message });
-          setIsLoading(false);
-        });
+        })
+        .finally(() => setIsButtonLoading(false));
     } else {
       setIsError({ show: true, message: "Fill in all fields!" });
     }
@@ -118,12 +118,14 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (formData.username && formData.password) {
-      setIsLoading(true);
+      setIsButtonLoading(true);
 
+      console.log(allUsers)
+      const fData = JSON.stringify({ user: formData, allUsers, mode: "login" });
+      console.log(fData)
       try {
         const response = await signIn("credentials", {
-          formData: JSON.stringify(formData),
-          mode: mode,
+          data: fData,
           redirect: false,
           callbackUrl: "/chat",
         });
@@ -138,7 +140,7 @@ export default function Register() {
       } catch (error) {
         console.error(`${mode} error`, error);
       } finally {
-        setIsLoading(false);
+        setIsButtonLoading(false);
       }
     } else {
       setIsError({ show: true, message: "Fill in all fields!" });
@@ -160,25 +162,9 @@ export default function Register() {
 
   return (
     <main
-      className={` flex flex-col lg:flex-row
+      className={` ${isLoading ? "hidden" : "flex"} flex-col lg:flex-row
       h-screen w-screen relative bg-[#ebe8e4] dark:bg-slate-950 justify-center items-center gap-10 overflow-hidden`}
     >
-      {/* <div className="z-10  max-h-screen overflow-hidden hidden lg:flex flex-col items-end justify-center w-full absolute">
-        <Image
-          src="/avatars/tacodog.png"
-          alt="logo"
-          height={300}
-          width={300}
-          className="scale-x-[-1] w-1/2 brightness-80"
-        />
-        <p className=" drop-shadow-md absolute bottom-5 right-10 text-white ">
-          Avatar Photos by{" "}
-          <a href="https://www.instagram.com/mcfriendy/?hl=en" className=" underline">
-            Alison Friend
-          </a>
-        </p>
-      </div> */}
-
       <div className="z-10  flex flex-col justify-center items-start relative  lg:h-96 lg:w-1/2 lg:items-end">
         <CardTitle className=" lg:text-[8rem] text-[5rem] leading-none drop-shadow-lg  ">
           Taco<span className="text-yellow-700">Dog</span>
@@ -280,13 +266,13 @@ export default function Register() {
               </div>
 
               {(isValid.show || isError.show) && (
-                <span className="  text-sm text-red-500 text-end">
+                <span className="text-center text-sm text-red-500">
                   {isValid.show ? isValid.message : isError.message}
                 </span>
               )}
             </div>
             <div className="py-2">
-              {isLoading ? (
+              {isButtonLoading ? (
                 <Button disabled className="w-full">
                   <Loader2 className="mr-2 h-4  animate-spin" /> Loading
                 </Button>

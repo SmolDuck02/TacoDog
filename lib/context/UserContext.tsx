@@ -1,6 +1,7 @@
-"use client"
+"use client";
 import { Redis } from "@upstash/redis";
-import { createContext, useState, useEffect, useContext } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { getAllUsers } from "../api";
 import { User } from "../types";
 
 type PropsType = {
@@ -24,7 +25,6 @@ const redis = new Redis({
   token: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN,
 });
 
-
 export const UserContext = createContext<UserContextType>(initialContext);
 
 export function UserContextProvider({ children }: PropsType) {
@@ -35,24 +35,15 @@ export function UserContextProvider({ children }: PropsType) {
   useEffect(() => {
     async function fetchUsers() {
       try {
-        const cachedUsers = (await redis.get(`cachedUsers`)) as User[];
-      
-        if (cachedUsers) {
-          setUsers(cachedUsers);
-          return;
-        }
-
-        const userKeys = await redis.keys(`user:*`);
-        const userValues = (await redis.mget(...userKeys)) as User[];
-
-        setUsers(userValues);
+        const data = await getAllUsers();
+        setUsers(data as User[]);
       } catch (err) {
         setError(err instanceof Error ? err : new Error("Failed to fetch users"));
       } finally {
         setIsLoading(false);
       }
     }
-    
+
     fetchUsers();
   }, []);
 

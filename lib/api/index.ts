@@ -2,7 +2,7 @@
 // import ava from "@/public/avatars/tacodog.png";
 // import bg from "@/public/bg/tacodog.jpg";
 import { ChatHistory, User, UserChat } from "../types";
-import { avatars, banners, redis } from "../utils";
+import { avatars, banners, redis, TacoDog } from "../utils";
 const bcrypt = require("bcrypt");
 
 export async function saveProfileChanges(user: User) {
@@ -54,16 +54,16 @@ export async function registerUser(formData: User) {
 export async function getAllUsers() {
   try {
     const cachedUsers = await redis.get("cachedUsers");
-    
+
     if (cachedUsers) {
       console.log("Returning cached users...");
       return cachedUsers as User[];
     }
-    
+
     const keys = await redis.keys("user:*");
     const values: User[] = await redis.mget(...keys);
 
-    if (!values) return null;
+    if (!values) return new Error("No users found!");
 
     const records = keys.map((_, index) => ({
       id: values[index].id,
@@ -72,14 +72,11 @@ export async function getAllUsers() {
       banner: values[index].banner,
     }));
 
-    console.log("all users fetched successful");
-
-    await redis.set("cachedUsers", records, { ex: 60 * 60 * 24 });
     console.log("Returning users ...");
+    await redis.set("cachedUsers", records, { ex: 60 * 60 * 24 });
     return records;
   } catch (error) {
-    console.error("Error fetching all users:", error);
-    return null;
+    throw new Error((error as Error).message);
   }
 }
 
@@ -107,18 +104,15 @@ export async function getUserChats(id: string) {
 
     if (!keys || keys.length === 0) {
       console.log("No user chats found with ", id, pattern);
-      return null;
+      return [{ user: TacoDog, chats: null }];
     }
 
     const chats: [ChatHistory[]] = await redis.mget(...keys);
-
     const userIDs = keys.map((k) => {
       const ids = k.split("_").filter((i) => !isNaN(Number(i)));
       return ids[0] == id ? ids[1] : ids[0];
     });
-
     const rawUsers: User[] = await redis.mget(...userIDs.map((id) => `user:${id}`));
-
     const users = rawUsers.map((user, index) => ({
       id: user.id,
       username: user.username,
@@ -130,12 +124,16 @@ export async function getUserChats(id: string) {
       return { user: user, chats: chats[index] };
     });
 
+    userChats.sort(
+      (a, b) =>
+        new Date(b.chats![b.chats!.length - 1].date).getTime() -
+        new Date(a.chats![a.chats!.length - 1].date).getTime()
+    );
+
     await redis.set(`cachedUserChats:${id}`, userChats, { ex: 60 * 60 * 24 });
-    console.log("Returning user chats...");
     return userChats;
   } catch (error) {
-    console.error("error fetching user chats ", error);
-    return null;
+    throw new Error((error as Error).message);
   }
 }
 

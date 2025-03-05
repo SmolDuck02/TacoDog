@@ -3,7 +3,7 @@ import defaultBanner from "@/public/bg/defaultBG.avif";
 import Image from "next/image";
 export default function ChatBanner({ activeChatUser }: { activeChatUser: User }) {
   return (
-    <div className="z-[20] relative border-b justify-end items-end w-full p-6 min-h-[2rem] lg:min-h-[5.5rem] flex text-[10px] lg:text-xs ">
+    <div className="z-[52] relative border-b justify-end items-end w-full p-6 min-h-[2rem] lg:min-h-[5.5rem] flex text-[10px] lg:text-xs ">
       <Image
         fill
         src={activeChatUser?.banner?.img || defaultBanner.src}

@@ -74,7 +74,7 @@ export async function initializeCamera(videoRef: HTMLVideoElement) {
       console.warn("No cameras found.");
       return;
     }
-    
+
     // Open the first available camera with a resolution of 1280x720
     const stream = await openCamera(cameras[0].deviceId, 1280, 720);
 
@@ -113,4 +113,8 @@ async function openCamera(deviceId: string, minWidth: number, minHeight: number)
     console.error("Error opening camera:", error);
     throw error; // Rethrow the error for handling by the caller
   }
+}
+
+export function chatUsersIDBuilder(currentUserID: string, activeChatUserID: string) {
+  return `_${[currentUserID, activeChatUserID].sort().join("_")}_`;
 }

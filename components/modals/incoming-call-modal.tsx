@@ -13,7 +13,7 @@ export function IncomingCallModal({
 }: {
   caller: User;
   handleVideoCallReject: (id: string) => void;
-  handleVideoCallAccept: (id: string) => void;
+  handleVideoCallAccept: (value: User) => void;
 }) {
   return (
     <Card>
@@ -40,7 +40,7 @@ export function IncomingCallModal({
           </div>
           <div className="z-10   w-full flex justify-end gap-4">
             <Button
-              onClick={() => handleVideoCallAccept(caller?.id)}
+              onClick={() => handleVideoCallAccept(caller)}
               variant="default"
               className="rounded-full h-14 w-14  aspect-square bg-green-500 hover:bg-green-700 "
             >

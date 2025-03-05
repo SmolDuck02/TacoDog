@@ -1,4 +1,4 @@
-import { ImageUpload } from "@/app/chat/page";
+import ImageDisplay from "./chat/image-display";
 import { ChatHistory, User } from "@/lib/types";
 import { iconLarge, monthDateOptions, timeOptions, yearDateOptions } from "@/lib/utils";
 import { Label } from "@radix-ui/react-label";
@@ -92,7 +92,7 @@ export default function ChatMesages({
     return `${hours > 0 ? hours + "h" : ""} ${minutes > 0 ? minutes + "m" : ""} ${seconds}s`;
   }
   return (
-    <div className="pb-8">
+    <>
       {/* empty div for padding*/}
       {/* <div className="min-h-[3rem] "></div> */}
 
@@ -208,7 +208,7 @@ export default function ChatMesages({
                     </CardContent>
                   )}
 
-                  {uploads && <ImageUpload fileUploads={uploads} />}
+                  {uploads && <ImageDisplay fileUploads={uploads} />}
 
                   {isSeen && isLastMessage && isAuthor ? (
                     <div className="activeUserAvatar absolute w-fit -bottom-1 -right-1  z-10">
@@ -240,6 +240,6 @@ export default function ChatMesages({
       {/* empty div for padding */}
       <div className="min-h-1 "></div>
       {/* <div className="min-h-5 "></div> */}
-    </div>
+    </>
   );
 }

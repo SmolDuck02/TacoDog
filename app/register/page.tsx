@@ -27,7 +27,6 @@ export default function Register() {
   const [formData, setFormData] = useState<User>({ id: "", username: "", password: "" });
   const [confirmPassword, setConfirmPassword] = useState<String>("");
 
-  //confirm password and password validation
   useEffect(() => {
     if (mode.match("Sign Up")) {
       if (
@@ -61,27 +60,26 @@ export default function Register() {
     }
   }, [confirmPassword, formData, mode, isValid]);
 
-  //password validation
-  // useEffect(() => {
-  //   if (mode.match("Sign Up")) {
-  //     if (
-  //       formData.password &&
-  //       !formData.password.match(/^(?=.*[A-Za-z])(?=.*\d)(?=.*\W)[A-Za-z\d\W]{8,}$/)
-  //     ) {
-  //       setIsValid({
-  //         show: true,
-  //         message:
-  //           "Password must meet the following requirements: <br />- At least 8 characters long.<br />- Contain both letters and numbers.<br />- Include at least one special character (e.g., @, $, !, %, *, ?, &).",
-  //       });
-  //     } else if (formData.password === confirmPassword) {
-  //       setIsValid({ show: false, message: "" });
-  //     } else {
-  //       if ((!formData.password && confirmPassword) || formData.password !== confirmPassword)
-  //         setIsValid({ show: true, message: "Passwords don't match!" });
-  //       else setIsValid({ show: false, message: "" });
-  //     }
-  //   }
-  // }, [formData, mode, confirmPassword]);
+  useEffect(() => {
+    if (mode.match("Sign Up")) {
+      if (
+        formData.password &&
+        !formData.password.match(/^(?=.*[A-Za-z])(?=.*\d)(?=.*\W)[A-Za-z\d\W]{8,}$/)
+      ) {
+        setIsValid({
+          show: true,
+          message:
+            "Password must meet the following requirements: <br />- At least 8 characters long.<br />- Contain both letters and numbers.<br />- Include at least one special character (e.g., @, $, !, %, *, ?, &).",
+        });
+      } else if (formData.password === confirmPassword) {
+        setIsValid({ show: false, message: "" });
+      } else {
+        if ((!formData.password && confirmPassword) || formData.password !== confirmPassword)
+          setIsValid({ show: true, message: "Passwords don't match!" });
+        else setIsValid({ show: false, message: "" });
+      }
+    }
+  }, [formData, mode, confirmPassword]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value != " ")
@@ -151,6 +149,7 @@ export default function Register() {
     () => setIsError((prevError) => ({ ...prevError, show: false })),
     [formData, confirmPassword]
   );
+  
   useEffect(() => {
     setFormData({
       id: "",

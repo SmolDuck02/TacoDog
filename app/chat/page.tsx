@@ -1,42 +1,49 @@
 "use client";
 import { IncomingCallModal } from "@/components/modals/incoming-call-modal";
 import SearchModal from "@/components/modals/search-modal";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { CardDescription, CardTitle } from "@/components/ui/card";
+import { CardDescription } from "@/components/ui/card";
 import ChatBanner from "@/components/ui/chat-banner";
 import ChatMessages from "@/components/ui/chat-messages";
 import ChatSidebar from "@/components/ui/chat-sidebar";
-import { Input } from "@/components/ui/input";
-import { askTacoDog, getAllUsers, getUserChats } from "@/lib/api";
+import ChatHeader from "@/components/ui/chat/header";
+import ImageDisplay from "@/components/ui/chat/image-display";
+import Fetching from "@/components/ui/fetching";
+import Hello from "@/components/ui/hello";
+import { askTacoDog, getUserChats } from "@/lib/api";
 import { useUsers } from "@/lib/context/UserContext";
 import { socket } from "@/lib/socketClient";
 import { ChatHistory, User, UserChat } from "@/lib/types";
-import { iconLarge, initializeCamera, TacoDog } from "@/lib/utils";
+import { chatUsersIDBuilder, iconMedium, initializeCamera, TacoDog } from "@/lib/utils";
 import TacoDogLogo from "@/public/logo.png";
 import EmojiPicker, { Theme } from "emoji-picker-react";
-import { Bone, Loader, Video, VideoOff } from "lucide-react";
+import { PaperclipIcon, SendIcon, SmileIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
-import Image, { StaticImageData } from "next/image";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+type Session = {
+  user: User;
+};
+
 export default function Chat() {
   const router = useRouter();
-  const { user } = (useSession().data ?? { user: null }) as { user: User | null };
-  const { users }  = useUsers();
-  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const { data, status } = useSession();
+  console.log(data, status);
+  const { user: currentUser } = (data ?? {}) as Session;
+  const { users: allUsers } = useUsers();
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
 
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // const [currentUser, setCurrentUser] = useState<User>(user);
+  const [isUserChatsLoading, setIsUserChatsLoading] = useState(true);
   const [userChats, setUserChats] = useState<UserChat[] | null>(null);
-  const [activeUserChat, setActiveUserChat] = useState<UserChat | null>(null);
+  const [activeUserChat, setActiveUserChat] = useState<UserChat>({ user: TacoDog, chats: null });
   const [chatUsersID, setChatUsersID] = useState<string | null>();
   const [callerID, setCallerID] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
   const [activeChatHistory, setActiveChatHistory] = useState<ChatHistory[] | null>(null);
   const [chatMessage, setChatMessage] = useState<string | null>();
-  const [isNewChat, setIsNewChat] = useState(false);
+  const [makeNewChat, setMakeNewChat] = useState(false);
   const [incomingCall, setIncomingCall] = useState<User | null>(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showSearchModalMini, setShowSearchModalMini] = useState(false);
@@ -49,166 +56,130 @@ export default function Chat() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
-  const helloRef = useRef<HTMLDivElement>(null);
+
   const searchRef = useRef<HTMLInputElement>(null);
   const chatMessageRef = useRef<HTMLSpanElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if(users){
-      setAllUsers(users)
-      setFilteredUsers(users)
-    }
-
-    if (user) {
-      const id = user.id;
-      console.log("fetching", user);
-
-      setCurrentUser(user as User);
+    if (status === "authenticated" && !userChats) {
+      const { id } = currentUser;
 
       getUserChats(id)
         .then((userChatsResponse) => {
-          if (userChatsResponse) {
-            setUserChats(
-              userChatsResponse.sort(
-                (a, b) =>
-                  new Date(b.chats![b.chats!.length - 1].date).getTime() -
-                  new Date(a.chats![a.chats!.length - 1].date).getTime()
-              )
-            );
-            setActiveUserChat(userChatsResponse[0]);
-          } else {
-            setUserChats([{ user: TacoDog, chats: null }]);
-            setActiveUserChat({ user: TacoDog, chats: null });
-          }
-          setChatUsersID(`_${[(userChatsResponse?.[0].user || TacoDog).id, id].sort().join("_")}_`);
+          const chatUsersID = chatUsersIDBuilder(id, userChatsResponse[0].user.id);
+          console.log("ferfe", userChatsResponse);
+          setUserChats(userChatsResponse);
+          setActiveUserChat(userChatsResponse[0]);
+          setChatUsersID(chatUsersID);
         })
         .catch((error) => console.log("Error getting user chats: ", error))
-        .finally(() => console.log("done fetching user chats"));
-      console.log("User:", user.username);
+        .finally(() => {
+          setIsUserChatsLoading(false);
+        });
     }
-  }, [user, users]);
+  }, [status, currentUser, userChats]);
 
-  const handleNewChat = useCallback(() => {
+  const handleMakeNewChat = useCallback(() => {
     setSearchText("");
+    setMakeNewChat(true);
     setShowSearchModalMini(false);
-    setIsNewChat(true);
   }, []);
 
-  const handleNewChatClose = () => {
-    // setActiveChatUser(allUsers?.filter((user) => user?.username === "TacoDog")[0] as User);
-    setIsNewChat(false);
+  const handleMakeNewChatClose = () => {
+    setMakeNewChat(false);
     setShowSearchModal(false);
   };
 
-  const handleSetActiveChat = (id: string) => {
+  const handleSetActiveChat = (chatUser: User) => {
     if (currentUser && userChats) {
-      const IDs = `_${[id, currentUser.id].sort().join("_")}_`;
-      const isNewChat =
-        (userChats.find((userChat) => userChat.user?.id === id) as UserChat) || null;
-      console.log("bbb", IDs, isNewChat);
-      setChatUsersID(IDs);
-      setIsNewChat(false);
+      const chatUsersID = chatUsersIDBuilder(currentUser.id, chatUser.id);
+      const makeNewChat = (userChats.find(
+        (userChat) => userChat.user === chatUser
+      ) as UserChat) || {
+        user: chatUser,
+        chats: null,
+      };
+
+      if (userChats.indexOf(makeNewChat) === -1) {
+        const updatedUserChats = userChats.toSpliced(0, 0, makeNewChat);
+        setUserChats(updatedUserChats);
+      }
+
+      setChatUsersID(chatUsersID);
+      setMakeNewChat(false);
       setShowSearchModal(false);
-      setActiveUserChat(
-        isNewChat
-          ? isNewChat
-          : { user: allUsers.find((user) => user?.id === id) as User, chats: null }
-      );
+      setActiveUserChat(makeNewChat);
 
-      if (!isNewChat) return;
-
-      let seenChat = isNewChat.chats?.at(-1) as ChatHistory;
-
-      if (seenChat?.isSeen) return;
-
-
-      //fuck this took a long time
-      //and even longer because this is wrong
-      seenChat = { ...seenChat, isSeen: true };
-      const chatTop = userChats?.[0] as UserChat;
-      chatTop.chats?.splice((isNewChat.chats?.length || 1) - 1, 1, seenChat);
-  
-
-      socket.emit("seenChat", {
-        senderID: seenChat.senderID,
-        index: isNewChat?.chats?.indexOf(seenChat),
-      });
-      // setActiveChatUser(allUsers.find((user) => user.id === id) as User);
-      // if (userChats)
-      //   setActiveChatHistory(userChats.find((chat) => chat.id === id) as ChatHistory[]);
-      // getActiveChatHistory(IDs).then((chatHistory) => {
-      //   setActiveChatHistory(chatHistory);
-      //   setActiveChatUser(allUsers.find((user) => user.id === id) as User);
-      // });
+      makeChatsSeen(makeNewChat);
     }
   };
 
-  // TODO fix video call time
+  const makeChatsSeen = (makeNewChat: UserChat) => {
+    let lastChat = makeNewChat.chats?.at(-1) as ChatHistory;
+
+    if (!lastChat || lastChat.isSeen) {
+      return;
+    }
+
+    lastChat = { ...lastChat, isSeen: true };
+
+    const fistUserChat = userChats?.[0] as UserChat;
+    fistUserChat.chats?.splice((makeNewChat.chats?.length || 1) - 1, 1, lastChat);
+
+    socket.emit("seenChat", {
+      senderID: lastChat.senderID,
+      index: makeNewChat?.chats?.indexOf(lastChat),
+    });
+  };
+
+  // TODO implement video call queueing for when offline to onlione
   // TODO implement delivered
-  // TODO implement deliver and emoji, and image sharing
   // TODO clean code
   useEffect(() => {
     //also the method for handling seenMessages
     socket.on(`receiveChat:${currentUser?.id}`, async (newChat) => {
-      console.log("receiver", newChat);
+      console.log("Chat Received", newChat);
 
-      if (newChat.senderID !== activeUserChat?.user.id) {
-        const inUserChats =
-          userChats?.find((userChat) => userChat?.user?.id === newChat.senderID) || null;
+      if (!activeUserChat) return;
 
-        if (!inUserChats) {
-          const updatedUserChats = [...(userChats as UserChat[])];
-          const currentUserChat = {
-            user:
-              newChat.senderID === currentUser?.id
-                ? activeUserChat?.user
-                : allUsers.find((user) => user?.id === newChat.senderID),
+      if (newChat.senderID === activeUserChat.user.id) {
+        const updatedChats = [...(activeUserChat.chats || []), newChat];
+        updateActiveChat(updatedChats);
+      } else {
+        const updatedUserChats = [...(userChats as UserChat[])];
+        const inUserChats = userChats?.find((userChat) => userChat?.user?.id === newChat.senderID);
+        const chatMate = allUsers.find((user) => user?.id === newChat.senderID);
+        const updatedChats = [...(inUserChats?.chats || []), newChat];
+
+        if (inUserChats) {
+          const currentUserChatIndex = userChats?.indexOf(inUserChats) || 0;
+          if (currentUserChatIndex > 0) {
+            updatedUserChats.splice(currentUserChatIndex, 1);
+            updatedUserChats.unshift(inUserChats);
+          }
+          updateInactiveChat(updatedChats);
+        } else {
+          const newUserChat = {
+            user: chatMate,
             chats: [newChat],
           } as UserChat;
-          updatedUserChats?.unshift(currentUserChat);
-          console.log("gano", updatedUserChats);
-          setUserChats(updatedUserChats);
-          return;
+          updatedUserChats?.unshift(newUserChat);
         }
-
-        const chats = [...(userChats as UserChat[])];
-        const index = userChats?.indexOf(inUserChats) || 0;
-
-        if (index > 0) {
-          chats.splice(index, 1); //delete from its current position
-          chats.unshift(inUserChats); //add to top of list
-        }
-        // const updatedUserChats = [...userChats]
-
-        // setActiveUserChat(updated);
-        return;
+        setUserChats(updatedUserChats);
       }
-      if (activeUserChat) {
-        setActiveUserChat({
-          ...activeUserChat,
-          chats: [...(activeUserChat.chats || []), newChat],
-        });
-        updateUserChats([...(activeUserChat?.chats || []), newChat] as ChatHistory[]);
-      }
-
-      // setActiveChatHistory([...(activeChatHistory || []), value]);
     });
 
     socket.on(`receiveCall:${currentUser?.id}`, (caller) => {
-      console.log("Incoming caller", caller);
       setIncomingCall(caller);
       setCallerID(caller.id);
     });
 
-    socket.on(`acceptCall`, ({ callerID, receiverID }) => {
-      console.log("call accepted caller", callerID);
-      console.log("call accepted receiver", receiverID);
-
-      if (receiverID == currentUser?.id) {
-        handleSetActiveChat(callerID);
+    socket.on(`acceptCall`, ({ caller, receiverID }) => {
+      if (receiverID === currentUser?.id) {
+        handleSetActiveChat(caller);
         setShowCamera(true);
-      } else if (callerID == currentUser?.id) {
+      } else if (callerID === currentUser?.id) {
         setIsVideoCallRinging(false);
       }
 
@@ -216,12 +187,10 @@ export default function Chat() {
     });
 
     socket.on(`rejectCall:${currentUser?.id}`, () => {
-      console.log("call rejected");
       handleVideoCallEnd(false);
     });
 
     socket.on(`typing:${currentUser?.id}`, ({ senderID, state = true }) => {
-      console.log(senderID, state);
       if (activeUserChat?.user?.id === senderID) setIsTyping(state);
     });
 
@@ -250,44 +219,34 @@ export default function Chat() {
     };
   });
 
-  const updateUserChats = useCallback(
-    (activeUserChatHistory: ChatHistory[], newChat?: ChatHistory) => {
+  const updateInactiveChat = (activeUserChatHistory: ChatHistory[]) => {
+    if (!userChats) return;
 
+    const updatedUserChats = [...userChats];
+
+    updatedUserChats[0].chats = activeUserChatHistory;
+
+    setUserChats(updatedUserChats);
+  };
+
+  const updateActiveChat = useCallback(
+    (activeUserChatHistory: ChatHistory[]) => {
       if (!userChats || !activeUserChat) return;
 
-      if (!newChat) {
-        const update = [...userChats];
-        update[0].chats = activeUserChatHistory;
-        setUserChats(update);
-        return;
-      }
-      //move activeUserChat to top of list with updated messages
-      if (userChats.find((userChat) => userChat.user?.id === activeUserChat.user.id)) {
-        const updated = [...userChats];
-        const index = updated.findIndex((userChat) => userChat.user?.id === activeUserChat.user.id);
+      const updatedUserChats = [...userChats];
+      const activeUserChatIndex = updatedUserChats.indexOf(activeUserChat);
 
-        if (index > 0) {
-          updated.splice(index, 1); //delete from its current position
-          updated.unshift(activeUserChat); //add to top of list
-        }
-
-        console.log("lll", index, updated, userChats, activeUserChat);
-
-        updated[0].chats = updated[0].chats ? [...updated[0].chats, newChat] : [newChat];
-        console.log("grgr", updated);
-        setUserChats(updated);
-      } else {
-        console.log("meow");
-        userChats.splice(0, 0, { user: activeUserChat.user, chats: [newChat] });
-      }
+      updatedUserChats[activeUserChatIndex].chats = activeUserChatHistory;
+      console.log(updatedUserChats, activeUserChat);
+      setUserChats(updatedUserChats);
     },
     [activeUserChat, userChats]
   );
 
   const handleSeenMessage = (id: number) => {
-    // console.log("lop", activeUserChat?.chats);
     let seenChat = activeUserChat?.chats?.[id] as ChatHistory;
     console.log("see", seenChat, id, activeUserChat);
+
     if (!seenChat || seenChat.isSeen) return;
 
     //fuck this took a long time
@@ -321,25 +280,27 @@ export default function Chat() {
     // socket.emit("seenMessage", { value });
   };
 
-  useEffect(() => {
-    if (videoRef.current) initializeCamera(videoRef.current);
-  }, [showCamera]);
-
   const handleSendMessage = async (
-    e: React.KeyboardEvent<HTMLSpanElement> | React.MouseEvent<HTMLButtonElement>
+    e:
+      | React.KeyboardEvent<HTMLSpanElement>
+      | React.MouseEvent<HTMLButtonElement>
+      | React.MouseEvent<SVGSVGElement>
   ) => {
-    if ("key" in e && e.key !== "Enter") return; // Ensure it's an Enter key event
+    if ("key" in e && e.key !== "Enter") {
+      return;
+    }
 
-    e.preventDefault(); // Prevents form submission (for input)
+    e.preventDefault();
 
     // if (socket.connected && e.key === "Enter" && activeChatUser && currentUser && chatMessage) {
     if (socket.connected && currentUser && (chatMessage || (fileUploads as File[])?.length > 0)) {
-      if (chatMessageRef.current)
+      if (chatMessageRef.current) {
         chatMessageRef.current.textContent =
           document.activeElement !== chatMessageRef.current ? "Enter message..." : "";
-      console.log("sender", chatUsersID);
-      const chatHistory = {
-        receiverID: activeUserChat?.user.id,
+      }
+
+      const chatData = {
+        receiverID: +activeUserChat?.user.id,
         newChatMessage: {
           senderID: currentUser.id,
           chatMessage: chatMessage,
@@ -349,38 +310,27 @@ export default function Chat() {
         activeChatHistory: activeUserChat?.chats || [],
       };
 
-      // if (chatUsers && !chatUsers.find((user) => user.id == activeChatUser.id)) {
-      //   chatUsers.push(activeChatUser);
-      // }
-      //for ui update of recent chats
-
-      if (activeUserChat) {
-        setActiveUserChat({
-          ...activeUserChat,
-          chats: [...(activeUserChat.chats || []), chatHistory.newChatMessage],
-        });
-      }
-      updateUserChats(activeUserChat?.chats as ChatHistory[], chatHistory.newChatMessage);
+      const updatedChats = [...(activeUserChat?.chats || []), chatData.newChatMessage];
+      updateActiveChat(updatedChats);
 
       //user input
-      socket.emit("sendChat", chatHistory);
+      socket.emit("sendChat", chatData);
 
       setFileUploads(null);
+
       if (!chatMessage) return;
+
       //ai output
       if (chatMessage.startsWith("@t")) {
+        socket.emit("typing", { senderID: +TacoDog.id, receiverID: currentUser.id });
+
         const result = await askTacoDog(chatMessage);
+        const { chatMessage: AIChatMessage } = result;
 
-        socket.emit("typing", { senderID: currentUser?.id, receiverID: TacoDog.id });
+        socket.emit("typing", { senderID: +TacoDog.id, receiverID: currentUser.id, state: false });
 
-        socket.emit("sendChat", {
-          ...chatHistory,
-          newChatMessage: { ...result, date: new Date() },
-          activeChatHistory: [
-            ...(activeUserChat?.chats as ChatHistory[]),
-            chatHistory.newChatMessage,
-          ],
-        });
+        const updatedChats = [...(activeUserChat?.chats || []), AIChatMessage];
+        updateActiveChat(updatedChats);
       }
 
       setChatMessage("");
@@ -409,18 +359,6 @@ export default function Chat() {
     };
   }, []);
 
-  const fade = () => {
-    setTimeout(() => {
-      if (helloRef?.current) {
-        helloRef.current.classList.add("opacity-0", "-translate-y-10");
-        setIsLoading(false);
-        setTimeout(() => {
-          if (helloRef.current) helloRef.current.style.display = "none";
-        }, 500);
-      }
-    }, 1000);
-  };
-
   useEffect(() => {
     if (messageContainerRef.current) {
       const height = messageContainerRef.current.scrollHeight - 630;
@@ -439,10 +377,6 @@ export default function Chat() {
   }, [activeUserChat?.chats]);
 
   useEffect(() => {
-    if (activeUserChat?.user) {
-      fade();
-    }
-
     setIsTyping(false); //typing is false by default when switching convos
 
     if (messageContainerRef.current) {
@@ -482,11 +416,11 @@ export default function Chat() {
   };
 
   useEffect(() => {
-    if (searchRef.current && isNewChat) {
+    if (searchRef.current && makeNewChat) {
       searchRef.current.focus();
       setShowSearchModal(true);
     }
-  }, [isNewChat, searchText]);
+  }, [makeNewChat, searchText]);
 
   const handleSearchModal = (value: string) => {
     setSearchText(value);
@@ -495,14 +429,15 @@ export default function Chat() {
     );
   };
 
+  useEffect(() => {
+    if (videoRef.current && showCamera) initializeCamera(videoRef.current);
+  }, [showCamera]);
+
   const handleVideoCall = async () => {
     setIsVideoCallRinging(true);
     setShowCamera(true);
     setCallerID(currentUser?.id as string);
 
-    if (videoRef.current) initializeCamera(videoRef.current);
-
-    console.log(activeUserChat?.user?.id);
     socket.emit("call", {
       receiverID: activeUserChat?.user?.id,
       caller: currentUser,
@@ -550,7 +485,8 @@ export default function Chat() {
         });
       }
 
-      updateUserChats(activeUserChat?.chats as ChatHistory[], chatHistory.newChatMessage);
+      const updatedChats = [...(activeUserChat?.chats || []), chatHistory.newChatMessage];
+      updateActiveChat(updatedChats);
 
       socket.emit("sendChat", chatHistory);
       setCallerID(null);
@@ -564,9 +500,9 @@ export default function Chat() {
   }, []);
 
   const handleVideoCallAccept = useCallback(
-    (callerID: string) => {
+    (caller: User) => {
       setIncomingCall(null);
-      socket.emit(`acceptCall`, { callerID, receiverID: currentUser?.id });
+      socket.emit(`acceptCall`, { caller, receiverID: currentUser?.id });
     },
     [currentUser]
   );
@@ -662,335 +598,207 @@ export default function Chat() {
     };
   }, [fileUploads]);
 
-  return (
+  const emptyChatMessages = (
+    <CardDescription className="select-none h-full text-muted-secondary/80 font-light  text-center w-full flex text-xs lg:text-base  flex-col justify-center items-center">
+      <Image
+        src={TacoDogLogo.src}
+        alt="tacodog logo"
+        width={300}
+        height={300}
+        className=" w-24 lg:w-32 aspect-square grayscale opacity-[.3]"
+      />
+      <span className="leading-tight flex flex-col">
+        Start your new chat by
+        <span>pinging TacoDog with &quot;@t&quot;</span>
+      </span>
+      <span>Woof!</span>
+    </CardDescription>
+  );
+
+  const mainContent = (
     <div className={`flex overflow-hidden h-screen w-screen `}>
-      {/* {!activeChatUser ? ( */}
-      {!activeUserChat ? (
-        <div
-          ref={helloRef}
-          className="duration-500 ease-out flex-col w-full h-full flex items-center text-[2rem] lg:text-[5rem] justify-center absolute z-[100]"
-        >
-          <h2 className="flex-row flex items-end leading-none gap-2">
-            Fetching
-            <Bone className="bone delay-0" />
-            <Bone className=" bone delay-300" />
-            <Bone className="bone delay-500" />
-          </h2>
-        </div>
-      ) : (
-        <>
-          <ChatSidebar
-            currentUserID={currentUser?.id as string}
-            allUsers={allUsers}
-            userChats={userChats as UserChat[]}
-            // activeChatUserID={activeChatUser.user?.id as string}
-            activeChatUser={activeUserChat.user as User}
+      <ChatSidebar
+        isUserChatsLoading={isUserChatsLoading}
+        currentUserID={currentUser?.id as string}
+        allUsers={allUsers}
+        userChats={userChats as UserChat[]}
+        activeChatUser={activeUserChat?.user as User}
+        handleSetActiveChat={handleSetActiveChat}
+        handleMakeNewChat={handleMakeNewChat}
+        handleMakeNewChatClose={handleMakeNewChatClose}
+      />
+
+      <div
+        className="relative h-full w-full flex flex-col"
+        tabIndex={-1}
+        onFocus={handleParentDivFocus}
+      >
+        {incomingCall && (
+          <IncomingCallModal
+            caller={incomingCall}
+            handleVideoCallAccept={handleVideoCallAccept}
+            handleVideoCallReject={handleVideoCallReject}
+          />
+        )}
+
+        {(showSearchModal || showSearchModalMini) && (
+          <SearchModal
+            searchText={searchText}
+            filteredUsers={filteredUsers || allUsers}
             handleSetActiveChat={handleSetActiveChat}
-            handleNewChat={handleNewChat}
-            handleNewChatClose={handleNewChatClose}
+          />
+        )}
+
+        <ChatBanner activeChatUser={activeUserChat?.user as User} />
+        <Hello isLoading setIsLoading={setIsLoading} />
+
+        <div className="w-full  flex-1 mx-auto flex flex-col relative bg-[#eee] dark:bg-gray-900">
+          <ChatHeader
+            makeNewChat={makeNewChat}
+            setMakeNewChat={setMakeNewChat}
+            setShowSearchModal={setShowSearchModal}
+            handleSearchModal={handleSearchModal}
+            searchRef={searchRef}
+            activeUserChat={activeUserChat as UserChat}
+            isVideoCallRinging={isVideoCallRinging}
+            currentUser={currentUser as User}
+            showCamera={showCamera}
+            handleVideoCall={handleVideoCall}
+            handleVideoCallEnd={handleVideoCallEnd}
           />
 
+          {/* chat body */}
           <div
-            className="relative h-full w-full flex flex-col"
-            tabIndex={-1}
-            onFocus={handleParentDivFocus}
+            ref={messageContainerRef}
+            className={` ${
+              showCamera ? "justify-center" : "justify-end"
+            } flex px-[15%] lg:px-[25%]  w-full  mx-auto gap-5 h-full items-center justify-center scrollbar scroll-smooth flex-col overflow-y-scroll`}
           >
-            {incomingCall && (
-              <IncomingCallModal
-                caller={incomingCall}
-                handleVideoCallAccept={handleVideoCallAccept}
-                handleVideoCallReject={handleVideoCallReject}
+            <div className="h-[4rem]" />
+            {/* camera */}
+            {showCamera ? (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                controls={false}
+                className="z-[48]  aspect-video  "
               />
+            ) : (
+              <div className=" h-[calc(100vh-14rem)] lg:h-[calc(100vh-19rem)]  relative w-full lg:w-[85%] flex flex-col gap-2 px-3  ">
+                {activeUserChat?.chats ? (
+                  <ChatMessages
+                    activeChatHistory={activeUserChat?.chats}
+                    activeChatUser={activeUserChat?.user}
+                    currentUser={currentUser as User}
+                    handleSeenMessage={handleSeenMessage}
+                  />
+                ) : (
+                  emptyChatMessages
+                )}
+              </div>
             )}
+          </div>
 
-            {(showSearchModal || showSearchModalMini) && (
-              <SearchModal
-                searchText={searchText}
-                filteredUsers={filteredUsers}
-                handleSetActiveChat={handleSetActiveChat}
+          {/* chat input */}
+          {/* <div className="bg-white dark:bg-slate-950 px-[25%] bottom-[15.9%] h-[1.3rem] z-[40]  absolute w-full border-t backdrop-blur-lg "></div> */}
+          {/* <div className="bg-white dark:bg-slate-950 px-[25%] relative bottom-0 overflow-hidden h-[19%] flex gap-2 w-full  justify-center  mx-auto "> */}
+          {/* empty space importanrt */}
+          <div
+            className={`${
+              (fileUploads as File[])?.length > 0 ? "min-h-[9rem]" : "min-h-[6.5rem]"
+            } flex justify-center items-start`}
+          >
+            {isTyping && (
+              <div className="duration-500 ease-in-out text-xs text-muted-secondary/40  w-fit flex gap-0 z-100">
+                {activeUserChat?.user.username} is typing
+                <h2 className="text-lg leading-none animate-typing delay-0 ">.</h2>
+                <h2 className="text-lg leading-none animate-typing  delay-300">.</h2>
+                <h2 className="text-lg leading-none animate-typing  delay-500">.</h2>
+              </div>
+            )}
+          </div>
+          <div
+            className={`${(fileUploads as File[])?.length > 0 ? "min-h-[9rem]" : "min-h-[5rem]"} 
+                   border-t bg-[#ebe8e4] dark:bg-slate-950 px-[15%] lg:px-[27%] absolute bottom-0 flex flex-col gap-2 w-full items-start  justify-end pb-5  mx-auto 
+                  `}
+          >
+            {(fileUploads as File[])?.length > 0 && (
+              <ImageDisplay fileUploads={fileUploads as File[]} setFileUploads={setFileUploads} />
+            )}
+            <div className={`gap-2 flex w-full items-center h-fit relative `}>
+              <span
+                tabIndex={0}
+                ref={chatMessageRef}
+                onFocus={() => handleFocus()}
+                onBlur={() => handleBlur()}
+                onInput={(e) => setChatMessage((e.target as HTMLElement).textContent)}
+                onDrop={(e) => handleFileChange(e)}
+                contentEditable
+                className={`${
+                  chatMessage ? "" : "text-muted-secondary/80"
+                } max-h-12 flex-wrap break-all focus:outline-none focus:ring-0 focus:border-muted-foreground dark:bg-gray-500/10 bg-[white] px-4 h-fit py-2 overflow-y-auto scrollbar items-center inline-flex rounded-lg border  w-full textarea`}
+                role="textbox"
+                onKeyDown={handleSendMessage}
               />
-            )}
+              <SmileIcon
+                id="emoji-icon"
+                size={iconMedium}
+                className="cursor-pointer  text-muted-secondary/80"
+                onClick={() => setShowPicker(true)}
+              />
 
-            <ChatBanner activeChatUser={activeUserChat?.user as User} />
+              <div className="h-fit flex self-center">
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={handleFileChange}
+                  accept={".png,.jpg,.jpeg"}
+                  multiple
+                  ref={fileInputRef}
+                />
 
-            <div className="w-full  flex-1 mx-auto flex flex-col relative bg-[#eee] dark:bg-gray-900">
-              <div
-                ref={helloRef}
-                className=" bg-[#ebe8e4] dark:bg-slate-950 duration-500 ease-out flex-col w-full h-full flex items-center text-[5rem] lg:text-[8rem] justify-center absolute z-[10]"
-              >
-                Helllow
+                <PaperclipIcon
+                  className="cursor-pointer  text-muted-secondary/80"
+                  size={iconMedium}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    fileInputRef.current?.click();
+                  }}
+                />
               </div>
 
-              {!isLoading && (
-                <>
-                  {/* chat header  bg-slate-500 bg-opacity-10 */}
-                  <div className=" bg-[#ebe8e4] shadow border-b  dark:bg-slate-950 px-[15%] lg:px-[25%] min-h-[5rem] flex items-center justify-between   z-20 absolute w-full   backdrop-blur-md">
-                    {isNewChat ? (
-                      <div className="w-full flex gap-3">
-                        <Button
-                          onClick={handleNewChatClose}
-                          className=" select-none text-muted-foreground"
-                          variant={"secondary"}
-                        >
-                          X
-                        </Button>
-                        <Input
-                          ref={searchRef}
-                          placeholder="Search people..."
-                          className=" select-none p-5 bg-gray-500/10 placeholder:text-muted-foreground/50"
-                          onFocus={() => setShowSearchModal(true)}
-                          onChange={(e) => handleSearchModal(e.target.value)}
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex w-full justify-between items-center px-4">
-                        <div className="flex gap-5 items-center">
-                          <Avatar className="h-10 w-10 cursor-pointer">
-                            <Image
-                              alt="User Avatar"
-                              height={300}
-                              width={300}
-                              className="aspect-square h-full w-full"
-                              src={activeUserChat.user?.avatar?.img as StaticImageData}
-                            />
-                            <AvatarFallback>{activeUserChat.user?.username[0]}</AvatarFallback>
-                          </Avatar>
-                          <CardTitle className="text-3xl">
-                            {activeUserChat.user?.username}
-                          </CardTitle>
-                        </div>
-                        <div className="flex gap-4 items-center">
-                          {isVideoCallRinging && (
-                            <>
-                              <Loader className="animate-spin " />
-                            </>
-                          )}
-                          {![TacoDog.id, currentUser?.id].includes(activeUserChat.user?.id) &&
-                            (showCamera ? (
-                              <VideoOff
-                                onClick={() => handleVideoCallEnd()}
-                                size={iconLarge}
-                                className="cursor-pointer"
-                              />
-                            ) : (
-                              <Video
-                                onClick={handleVideoCall}
-                                size={iconLarge}
-                                className="cursor-pointer"
-                              />
-                            ))}
-                          {/* <CircleEllipsis size={iconSize} className="cursor-pointer" /> */}
-                          {/* <Account username={user.username} setUser={setUser} /> */}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* chat body */}
-                  <div
-                    ref={messageContainerRef}
-                    className={` ${
-                      showCamera ? "justify-center" : "justify-end"
-                    } flex px-[15%] lg:px-[25%]  w-full  mx-auto gap-5 h-full items-center justify-center scrollbar scroll-smooth flex-col overflow-y-scroll`}
-                  >
-                    <div className="h-[4rem]" />
-                    {/* camera */}
-                    {showCamera ? (
-                      <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        controls={false}
-                        className="z-[48]  aspect-video  "
-                      />
-                    ) : (
-                      <div className=" h-[calc(100vh-14rem)] lg:h-[calc(100vh-19rem)]  relative w-full lg:w-[85%] flex flex-col gap-2 px-3  ">
-                        {activeUserChat.chats && currentUser ? (
-                          <ChatMessages
-                            activeChatHistory={activeUserChat.chats}
-                            activeChatUser={activeUserChat.user}
-                            currentUser={currentUser}
-                            handleSeenMessage={handleSeenMessage}
-                          />
-                        ) : (
-                          <CardDescription className="select-none h-full text-muted-secondary/80 font-light  text-center w-full flex text-xs lg:text-base  flex-col justify-center items-center">
-                            <Image
-                              src={TacoDogLogo.src}
-                              alt="tacodog logo"
-                              width={300}
-                              height={300}
-                              className=" w-24 lg:w-32 aspect-square grayscale opacity-[.3]"
-                            />
-                            <span className="leading-tight">
-                              Start your new chat by
-                              <br />
-                              <span>pinging TacoDog with &quot;@t&quot;</span>
-                            </span>
-                            <span>Woof!</span>
-                          </CardDescription>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  {isTyping && document.activeElement != chatMessageRef.current && (
-                    <div className="duration-500 ease-in-out text-xs text-muted-secondary/40 absolute bottom-[19%] w-fit flex gap-0 left-1/2 -translate-x-1/2 z-100">
-                      {activeUserChat.user.username} is typing
-                      <h2 className="text-lg leading-none animate-typing delay-0 ">.</h2>
-                      <h2 className="text-lg leading-none animate-typing  delay-300">.</h2>
-                      <h2 className="text-lg leading-none animate-typing  delay-500">.</h2>
-                    </div>
-                  )}
-
-                  <div
-                    ref={pickerRef}
-                    className="absolute right-[7rem] lg:right-[25rem] bottom-[4rem] z-10"
-                  >
-                    <EmojiPicker
-                      open={showPicker}
-                      height={300}
-                      width={300}
-                      style={{ backgroundColor: "black" }}
-                      // className="bg-white"
-                      theme={Theme.AUTO}
-                      onEmojiClick={handleEmojiClick}
-                      previewConfig={{
-                        showPreview: false,
-                      }}
-                    />
-                  </div>
-
-                  {/* chat input */}
-                  {/* <div className="bg-white dark:bg-slate-950 px-[25%] bottom-[15.9%] h-[1.3rem] z-[40]  absolute w-full border-t backdrop-blur-lg "></div> */}
-                  {/* <div className="bg-white dark:bg-slate-950 px-[25%] relative bottom-0 overflow-hidden h-[19%] flex gap-2 w-full  justify-center  mx-auto "> */}
-                  <div
-                    className={`${
-                      (fileUploads as File[])?.length > 0 ? "min-h-[10rem]" : "min-h-[5rem]"
-                    }`}
-                  ></div>
-                  <div
-                    className={`${
-                      (fileUploads as File[])?.length > 0 ? "min-h-[10rem]" : "min-h-[5rem]"
-                    } 
-                   border-t bg-[#ebe8e4] dark:bg-slate-950 px-[15%] lg:px-[27%] absolute bottom-0 flex flex-col gap-2 w-full items-start  justify-center  mx-auto 
-                  `}
-                  >
-                    {(fileUploads as File[])?.length > 0 && (
-                      <ImageUpload
-                        fileUploads={fileUploads as File[]}
-                        setFileUploads={setFileUploads}
-                      />
-                    )}
-                    <div className={`gap-2 flex w-full items-center h-fit relative `}>
-                      <span
-                        tabIndex={0}
-                        ref={chatMessageRef}
-                        onFocus={() => handleFocus()}
-                        onBlur={() => handleBlur()}
-                        onInput={(e) => setChatMessage((e.target as HTMLElement).textContent)}
-                        onDrop={(e) => handleFileChange(e)}
-                        contentEditable
-                        className={`${
-                          chatMessage ? "" : "text-muted-secondary/80"
-                        } max-h-12 flex-wrap break-all focus:outline-none focus:ring-0 focus:border-muted-foreground dark:bg-gray-500/10 bg-[white] px-4 h-fit py-2 overflow-y-auto scrollbar items-center inline-flex rounded-lg border  w-full textarea`}
-                        role="textbox"
-                        onKeyDown={handleSendMessage}
-                      />
-                      {/* <Image
-                      width={300}
-                      height={300}
-                      className="size-5 z-[10] absolute left-[60%]"
-                      src={EmojiIcon}
-                      alt="Emoji Icon"
-                      /> */}
-                      <button
-                        id="emoji-icon"
-                        className="cursor-pointer"
-                        onClick={() => setShowPicker(true)}
-                      >
-                        <EmojiIcon className="size-7 text-muted-secondary/80" />
-                      </button>
-
-                      <div className="h-fit flex self-center">
-                        <input
-                          type="file"
-                          className="hidden"
-                          onChange={handleFileChange}
-                          accept={".png,.jpg,.jpeg"}
-                          multiple
-                          ref={fileInputRef}
-                        />
-                        <button
-                          className="cursor-pointer"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            fileInputRef.current?.click();
-                          }}
-                        >
-                          <AttachmentIcon className="size-7 text-muted-secondary/80" />
-                        </button>
-                      </div>
-                      <button className="cursor-pointer" onClick={handleSendMessage}>
-                        <SubmitIcon className="size-7 text-muted-secondary/80" />
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
+              <SendIcon
+                className="cursor-pointer text-muted-secondary/80"
+                size={iconMedium}
+                onClick={(e) => handleSendMessage(e)}
+              />
             </div>
           </div>
-        </>
-      )}
-    </div>
-  );
-}
 
-export function ImageUpload({
-  fileUploads,
-  setFileUploads,
-}: {
-  fileUploads: File[];
-  setFileUploads?: (value: File[]) => void;
-}) {
-  const [isImageHoverMap, setIsImageHoverMap] = useState<Record<number, boolean>>({});
-
-  return (
-    <div className={`  flex gap-1    `}>
-      {fileUploads.map((file, index) => {
-        return (
           <div
-            key={index}
-            className="relative flex items-center justify-center"
-            onMouseEnter={() =>
-              setFileUploads && setIsImageHoverMap((prev) => ({ ...prev, [index]: true }))
-            }
-            onMouseLeave={() =>
-              setFileUploads && setIsImageHoverMap((prev) => ({ ...prev, [index]: false }))
-            }
+            ref={pickerRef}
+            className="absolute right-[7rem] lg:right-[25rem] bottom-[4rem] z-10"
           >
-            <Image
-              width={300}
+            <EmojiPicker
+              open={showPicker}
               height={300}
-              src={URL.createObjectURL(file)}
-              alt={`uploaded image ${index}`}
-              className={` ${isImageHoverMap[index] === true ? "opacity-50" : "opacity-100"} ${
-                setFileUploads && "border bg-white/10"
-              }
-                                h-20 w-20 aspect-square rounded object-cover 
-                                `}
+              width={300}
+              style={{ backgroundColor: "black" }}
+              // className="bg-white"
+              theme={Theme.AUTO}
+              onEmojiClick={handleEmojiClick}
+              previewConfig={{
+                showPreview: false,
+              }}
             />
-            {isImageHoverMap[index] && setFileUploads && (
-              <button
-                className="cursor-pointer absolute"
-                onClick={() => setFileUploads(fileUploads.filter((_, i) => i !== index))}
-              >
-                <CloseIcon className="size-7 text-black/80 dark:text-white/80" />
-              </button>
-            )}
           </div>
-        );
-      })}
+        </div>
+      </div>
     </div>
   );
+
+  return activeUserChat ? mainContent : <Fetching />;
 }
 
 const CloseIcon = ({ className }: { className: string }) => (

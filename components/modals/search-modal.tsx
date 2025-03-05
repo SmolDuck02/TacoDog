@@ -5,7 +5,7 @@ import { CardTitle } from "../ui/card";
 interface SearchModalProps {
   searchText: string;
   filteredUsers: User[];
-  handleSetActiveChat: (id: string) => void;
+  handleSetActiveChat: (value: User) => void;
 }
 export default function SearchModal(props: SearchModalProps) {
   const { searchText, filteredUsers, handleSetActiveChat } = props;
@@ -22,7 +22,7 @@ export default function SearchModal(props: SearchModalProps) {
         (searchText ? filteredUsers : filteredUsers.slice(0, 3)).map((user) => (
           <div
             onClick={() => {
-              handleSetActiveChat(user?.id);
+              handleSetActiveChat(user);
               // setActiveChatHistory(null);
             }}
             key={user?.id}

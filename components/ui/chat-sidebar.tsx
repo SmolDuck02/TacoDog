@@ -10,25 +10,28 @@ import { ProfileModal } from "../modals/profile-modal";
 import { Avatar } from "./avatar";
 import { CardTitle } from "./card";
 import { Input } from "./input";
+import { Skeleton } from "./skeleton";
 
 interface ChatSidebarProps {
+  isUserChatsLoading: boolean;
   allUsers: User[];
   userChats: UserChat[];
   currentUserID: string;
   activeChatUser: User;
-  handleSetActiveChat: (id: string) => void;
-  handleNewChat: () => void;
-  handleNewChatClose: () => void;
+  handleSetActiveChat: (value: User) => void;
+  handleMakeNewChat: () => void;
+  handleMakeNewChatClose: () => void;
 }
 export default function ChatSidebar(props: ChatSidebarProps) {
   const {
+    isUserChatsLoading,
     currentUserID,
     allUsers,
     userChats,
     activeChatUser,
     handleSetActiveChat,
-    handleNewChat,
-    handleNewChatClose,
+    handleMakeNewChat,
+    handleMakeNewChatClose,
   } = props;
   const [isChatSidebar, setIsChatSidebar] = useState<false | true | "search" | "column">(false);
   const [isAccountSidebar, setAccountSidebar] = useState(false);
@@ -38,7 +41,7 @@ export default function ChatSidebar(props: ChatSidebarProps) {
 
   const handleSearch = () => {
     setIsChatSidebar("search");
-    handleNewChatClose();
+    handleMakeNewChatClose();
   };
 
   function toggleChatSidebar() {
@@ -129,7 +132,7 @@ export default function ChatSidebar(props: ChatSidebarProps) {
               className="cursor-pointer"
               onClick={() => {
                 setIsChatSidebar(false);
-                handleNewChat();
+                handleMakeNewChat();
               }}
             />
           </div>
@@ -139,7 +142,7 @@ export default function ChatSidebar(props: ChatSidebarProps) {
               <Input
                 ref={searchRef}
                 className={` focus:ring-none bg-secondary placeholder:text-muted-foreground/50 dark:bg-gray-500/10 bg-[white] pr-8`}
-                onFocus={handleNewChatClose}
+                onFocus={handleMakeNewChatClose}
                 placeholder="Find people..."
                 value={filter || ""}
                 onChange={(e) => {
@@ -204,7 +207,7 @@ export default function ChatSidebar(props: ChatSidebarProps) {
                   key={index}
                   className="relative flex hover:bg-gray-800 rounded items-center"
                   onClick={() => {
-                    handleSetActiveChat(user?.id);
+                    handleSetActiveChat(user);
                     setFilter(null);
                     window.innerWidth < 1000 && setIsChatSidebar(false);
                   }}
@@ -220,7 +223,7 @@ export default function ChatSidebar(props: ChatSidebarProps) {
                       )}
                     </>
                   )}
-                  {lastMessage && isAuthor && (
+                  {lastMessage && isAuthor && lastMessage.isSeen && (
                     <div
                       className={`${isChatSidebar && !filter ? "right-3 " : "hidden"} ${
                         isActiveChat ? "brightness-125" : "brightness-50"
@@ -271,8 +274,20 @@ export default function ChatSidebar(props: ChatSidebarProps) {
                 </div>
               );
             })
+          ) : isUserChatsLoading ? (
+            <div className="w-full flex items-center space-x-4">
+              <Skeleton className="h-12 w-12 aspect-square rounded-full" />
+              {isChatSidebar && (
+                <div className="space-y-2 w-full">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              )}
+            </div>
           ) : (
-            <div className="py-3 text-muted-foreground text-center w-full">No People Found.</div>
+            isChatSidebar && (
+              <div className="py-3 text-muted-foreground text-center w-full">No People Found.</div>
+            )
           )}
         </div>
 

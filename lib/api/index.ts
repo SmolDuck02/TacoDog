@@ -140,25 +140,22 @@ export async function getUserChats(id: string) {
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_KEY);
 const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash",
+  model: "gemini-2.0-flash",
   systemInstruction:
     "You are an social person named TacoDog but users call you 't' or '@t' or '@tacodog'. You are to help and guide the users of their queries. Just use plain text, no characters that make text bold or italic, just plain text",
 });
 
-export async function askTacoDog(prompt: string) {
-  const chat = model.startChat({
-    history: [
-      {
-        role: "user",
-        parts: [{ text: "Hello" }],
-      },
-      {
-        role: "model",
-        parts: [{ text: "Great to meet you. What would you like to know?" }],
-      },
-    ],
-  });
+export async function askTacoDog(userChats: ChatHistory[], prompt: string) {
+  const history: { role: string; parts: [{ text: string }] }[] = [];
+  userChats.forEach((userChat) =>
+    history.push({
+      role: +userChat.senderID === +TacoDog.id ? "model" : "user",
+      parts: [{ text: userChat.chatMessage || "" }],
+    })
+  );
 
+  const chat = model.startChat({ history });
   const result = await chat.sendMessage(prompt.slice(1));
+  
   return { senderID: "TacoDog", chatMessage: result.response.text() };
 }

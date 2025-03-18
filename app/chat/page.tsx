@@ -324,12 +324,19 @@ export default function Chat() {
       if (chatMessage.startsWith("@t")) {
         socket.emit("typing", { senderID: +TacoDog.id, receiverID: currentUser.id });
 
-        const result = await askTacoDog(chatMessage);
+        const result = await askTacoDog(activeUserChat.chats || [], chatMessage);
         const { chatMessage: AIChatMessage } = result;
+        const aiChatData = {
+          senderID: TacoDog.id,
+          chatMessage: AIChatMessage,
+          uploads: fileUploads,
+          date: new Date(),
+        } as ChatHistory;
 
+        console.log("lopppp", [...(activeUserChat?.chats || []), AIChatMessage]);
         socket.emit("typing", { senderID: +TacoDog.id, receiverID: currentUser.id, state: false });
 
-        const updatedChats = [...(activeUserChat?.chats || []), AIChatMessage];
+        const updatedChats = [...(activeUserChat?.chats || []), aiChatData];
         updateActiveChat(updatedChats);
       }
 

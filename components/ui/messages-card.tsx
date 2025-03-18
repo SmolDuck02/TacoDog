@@ -17,7 +17,6 @@ export default function MessagesCard({
     >
       {messages && currentUser && chatMate ? (
         messages.map((message, index) => {
-          console.log(messages, message, message.senderID, currentUser.id);
           const isAuthor = message.senderID == currentUser.id;
           const author: User = isAuthor ? currentUser : chatMate;
           return (

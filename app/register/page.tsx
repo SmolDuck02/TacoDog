@@ -118,9 +118,8 @@ export default function Register() {
     if (formData.username && formData.password) {
       setIsButtonLoading(true);
 
-      console.log(allUsers)
       const fData = JSON.stringify({ user: formData, allUsers, mode: "login" });
-      console.log(fData)
+   
       try {
         const response = await signIn("credentials", {
           data: fData,
@@ -133,7 +132,6 @@ export default function Register() {
           setIsError({ show: true, message: error });
         }
 
-        console.log("response", response);
         await router.replace("/chat");
       } catch (error) {
         console.error(`${mode} error`, error);

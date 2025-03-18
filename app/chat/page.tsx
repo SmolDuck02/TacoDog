@@ -29,7 +29,6 @@ type Session = {
 export default function Chat() {
   const router = useRouter();
   const { data, status } = useSession();
-  console.log(data, status);
   const { user: currentUser } = (data ?? {}) as Session;
   const { users: allUsers } = useUsers();
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -68,7 +67,6 @@ export default function Chat() {
       getUserChats(id)
         .then((userChatsResponse) => {
           const chatUsersID = chatUsersIDBuilder(id, userChatsResponse[0].user.id);
-          console.log("ferfe", userChatsResponse);
           setUserChats(userChatsResponse);
           setActiveUserChat(userChatsResponse[0]);
           setChatUsersID(chatUsersID);
@@ -139,8 +137,6 @@ export default function Chat() {
   useEffect(() => {
     //also the method for handling seenMessages
     socket.on(`receiveChat:${currentUser?.id}`, async (newChat) => {
-      console.log("Chat Received", newChat);
-
       if (!activeUserChat) return;
 
       if (newChat.senderID === activeUserChat.user.id) {
@@ -237,7 +233,6 @@ export default function Chat() {
       const activeUserChatIndex = updatedUserChats.indexOf(activeUserChat);
 
       updatedUserChats[activeUserChatIndex].chats = activeUserChatHistory;
-      console.log(updatedUserChats, activeUserChat);
       setUserChats(updatedUserChats);
     },
     [activeUserChat, userChats]
@@ -245,15 +240,13 @@ export default function Chat() {
 
   const handleSeenMessage = (id: number) => {
     let seenChat = activeUserChat?.chats?.[id] as ChatHistory;
-    console.log("see", seenChat, id, activeUserChat);
-
+    
     if (!seenChat || seenChat.isSeen) return;
 
     //fuck this took a long time
     seenChat = { ...seenChat, isSeen: true };
     const chatTop = userChats?.[0] as UserChat;
     chatTop.chats?.splice(id, 1, seenChat);
-    console.log(seenChat, chatTop, userChats);
 
     socket.emit("seenChat", {
       senderID: seenChat.senderID,
@@ -484,7 +477,6 @@ export default function Chat() {
         activeChatHistory: activeChatHistory || [],
       };
 
-      console.log("llololol", chatHistory, activeUserChat);
       if (activeUserChat) {
         setActiveUserChat({
           ...activeUserChat,
@@ -529,7 +521,6 @@ export default function Chat() {
   };
 
   useEffect(() => {
-    console.log(chatMessage);
     if (chatMessageRef.current && chatMessage)
       chatMessageRef.current.textContent = chatMessage || "";
   }, [chatMessage]);
@@ -541,8 +532,6 @@ export default function Chat() {
 
         // Move caret to the end of the chat input
         if (chatMessageRef?.current) {
-          console.log("Attempting focus on:", chatMessageRef.current);
-
           // Ensure span is focusable first
           chatMessageRef.current.focus();
 

@@ -42,12 +42,6 @@ export default function ChatHeader(props: Props) {
      setShowSearchModal(false);
    };
 
-   console.log(
-     activeUserChat?.user?.id,
-     [TacoDog.id, currentUser?.id],![(TacoDog.id, currentUser?.id)].includes(
-       activeUserChat?.user?.id
-     )
-   );
   return (
     <div className=" bg-[#ebe8e4] shadow border-b  dark:bg-slate-950 px-[15%] lg:px-[25%] min-h-[5rem] flex items-center justify-between   z-20 absolute w-full   backdrop-blur-md">
       {makeNewChat ? (

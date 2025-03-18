@@ -24,7 +24,6 @@ export default function ChatMesages({
     //   ([entry]) => {
     //     if (entry.isIntersecting) {
     //       const id = entry.target.querySelector(".chatMessage")?.id;
-    //       console.log("read", id);
 
     //       if (id) handleSeenMessage(Number(id));
     //     }
@@ -68,7 +67,6 @@ export default function ChatMesages({
       lastChat.getBoundingClientRect().top >= 0 &&
       lastChat.getBoundingClientRect().bottom <= window.innerHeight
     ) {
-      // console.log("readOn", activeChatHistory, lastChat?.id, lastChat.textContent);
       const isAuthor = activeChatHistory[+lastChat?.id as number]?.senderID === currentUser.id;
       if (lastChat.id && !isAuthor) handleSeenMessage(+lastChat.id);
     }
@@ -98,7 +96,6 @@ export default function ChatMesages({
 
       {/* chat messages */}
       {activeChatHistory.map((message, index) => {
-        // console.log("g??", message);
         if (!message) return;
         const {
           senderID,

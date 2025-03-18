@@ -15,7 +15,6 @@ export default function Account({
       const response = await axios.get("http://web-production-019a.up.railway.app/signin/guest/");
       setUser({ id: response.data.user.id, username: response.data.user.username });
       clearLocalStorage();
-      console.log("Logout sucess");
     } catch (error) {
       console.error("Error loggin out:", error);
     }

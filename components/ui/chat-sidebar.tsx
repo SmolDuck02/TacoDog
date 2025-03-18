@@ -99,7 +99,6 @@ export default function ChatSidebar(props: ChatSidebarProps) {
         isChatSidebar ? "w-full shadow-2xl border-r " : "w-[4rem]"
       } `}
       // onBlur={(event) => {
-      //   console.log("ddw", event.relatedTarget, document.activeElement);
       //   if (!event.currentTarget.contains(event.relatedTarget)) {
       //     setIsChatSidebar(false);
       //   }
@@ -184,7 +183,6 @@ export default function ChatSidebar(props: ChatSidebarProps) {
               const chats = (userChat as UserChat).chats || [];
               const lastMessage = chats.at(-1);
               const isAuthor = lastMessage?.senderID === currentUserID;
-              // console.log("heyhey", user, lastMessage, chats, filteredUsers);
               const isActiveChat = activeChatUser?.id === user?.id;
               const callMessage = (isAuthor ? "You" : user.username) + " Called";
               const chatMessage = isAuthor

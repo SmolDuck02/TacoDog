@@ -7,7 +7,7 @@ const bcrypt = require("bcrypt");
 
 export async function saveProfileChanges(user: User) {
   const status = await redis.set(`user:${user.id}`, user);
-  console.log("Update profile is ", status);
+
 }
 
 export async function registerUser(formData: User) {
@@ -29,10 +29,7 @@ export async function registerUser(formData: User) {
       });
     }
 
-    console.log(formData, users, user);
-
     if (user) {
-      console.log("Username already taken!", user.username);
       return { error: "Username already taken!" };
     }
 

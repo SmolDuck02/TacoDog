@@ -39,8 +39,7 @@ export default function EditProfileModal() {
     const formData = JSON.stringify({user: updatedUser, mode: "update"});
 
     saveProfileChanges(updatedUser as User);
-    console.log(session?.user, updatedUser);
-
+ 
     signIn("credentials", {
       data: formData,
       redirect: false,

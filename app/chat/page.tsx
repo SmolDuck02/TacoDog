@@ -240,7 +240,7 @@ export default function Chat() {
 
   const handleSeenMessage = (id: number) => {
     let seenChat = activeUserChat?.chats?.[id] as ChatHistory;
-    
+
     if (!seenChat || seenChat.isSeen) return;
 
     //fuck this took a long time
@@ -293,7 +293,7 @@ export default function Chat() {
       }
 
       const chatData = {
-        receiverID: +activeUserChat?.user.id,
+        receiverID: activeUserChat?.user.id,
         newChatMessage: {
           senderID: currentUser.id,
           chatMessage: chatMessage,
@@ -327,7 +327,7 @@ export default function Chat() {
         } as ChatHistory;
 
         console.log("lopppp", [...(activeUserChat?.chats || []), AIChatMessage]);
-        socket.emit("typing", { senderID: +TacoDog.id, receiverID: currentUser.id, state: false });
+        socket.emit("typing", { senderID: TacoDog.id, receiverID: currentUser.id, state: false });
 
         const updatedChats = [...(activeUserChat?.chats || []), aiChatData];
         updateActiveChat(updatedChats);

@@ -6,7 +6,7 @@
     "dev": "node --import=./register.js  --trace-warnings   server.mts",
     "dev:socket": "NODE_OPTIONS='--loader ts-node/esm --trace-warnings --no-warnings' ts-node server.mts",
     "build": "next build",
-    "start": "NODE_ENV=production node --import=./register.js --trace-warnings  server.mts",
+    "start": "NODE_OPTIONS='--max_old_space_size=450' NODE_ENV=production node --import=./register.js --trace-warnings  server.mts",
     "lint": "next lint"
   },
   "dependencies": {

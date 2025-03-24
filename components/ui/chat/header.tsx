@@ -78,7 +78,7 @@ export default function ChatHeader(props: Props) {
           </div>
           <div className="flex gap-4 items-center">
             {isVideoCallRinging && <Loader className="animate-spin " />}
-            {![+TacoDog.id, currentUser?.id].includes(activeUserChat?.user?.id) &&
+            {![TacoDog.id, currentUser?.id].includes(activeUserChat?.user?.id) &&
              ( showCamera ? (
                 <VideoOff
                   onClick={() => handleVideoCallEnd()}

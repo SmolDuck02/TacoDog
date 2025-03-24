@@ -42,6 +42,7 @@ export async function registerUser(formData: User) {
       banner: banners[id % banners.length],
     });
 
+    await redis.del("cachedUsers");
     return { success: "Registration successful" };
   } catch (error) {
     throw error;
@@ -153,6 +154,6 @@ export async function askTacoDog(userChats: ChatHistory[], prompt: string) {
 
   const chat = model.startChat({ history });
   const result = await chat.sendMessage(prompt.slice(1));
-  
+
   return { senderID: "TacoDog", chatMessage: result.response.text() };
 }

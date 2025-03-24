@@ -1,6 +1,5 @@
 import type { User } from "@/lib/types";
 import { avatars, banners } from "@/lib/utils";
-import { UpstashRedisAdapter } from "@next-auth/upstash-redis-adapter";
 import { Redis } from "@upstash/redis";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -12,9 +11,10 @@ const bcrypt = require("bcrypt");
 const redis = Redis.fromEnv();
 
 export const options: NextAuthOptions = {
-  adapter: UpstashRedisAdapter(redis),
+  // adapter: UpstashRedisAdapter(redis),
   providers: [
     GoogleProvider({
+      name: "google",
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
 
@@ -33,6 +33,7 @@ export const options: NextAuthOptions = {
           ...profile,
         };
 
+        await redis.del(`cachedUsers`);
         await redis.set(`user:${profile.sub}`, newUser);
         return newUser;
       },
@@ -63,7 +64,7 @@ export const options: NextAuthOptions = {
             const matchedUsernamesID = matchedUsernames.map((userItem: User) => `user:${userItem.id}`);
             const matchedUsers = await redis.mget(...matchedUsernamesID) as User[];
             let foundUser: User | null = null;
-            
+
             for (const userItem of matchedUsers) {
               if (await bcrypt.compare(password, userItem.password)) {
                 foundUser = userItem;

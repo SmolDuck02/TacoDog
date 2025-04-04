@@ -1,11 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    loader: "default",
+    path: "/",
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**.example.com",
-        port: "",
+        hostname: "**",
       },
     ],
   },

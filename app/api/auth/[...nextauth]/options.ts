@@ -4,10 +4,10 @@ import { Redis } from "@upstash/redis";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
+import bcrypt from "bcryptjs";
 
 type CredentialsData = { data: string };
 
-const bcrypt = require("bcrypt");
 const redis = Redis.fromEnv();
 
 export const options: NextAuthOptions = {
@@ -66,7 +66,7 @@ export const options: NextAuthOptions = {
             let foundUser: User | null = null;
 
             for (const userItem of matchedUsers) {
-              if (await bcrypt.compare(password, userItem.password)) {
+              if (await bcrypt.compare(password, userItem.password as string)) {
                 foundUser = userItem;
                 break;
               }

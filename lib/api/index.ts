@@ -3,7 +3,7 @@
 // import bg from "@/public/bg/tacodog.jpg";
 import { ChatHistory, User, UserChat } from "../types";
 import { avatars, banners, redis, TacoDog } from "../utils";
-const bcrypt = require("bcrypt");
+import bcrypt from "bcryptjs";
 
 export async function saveProfileChanges(user: User) {
   const status = await redis.set(`user:${user.id}`, user);

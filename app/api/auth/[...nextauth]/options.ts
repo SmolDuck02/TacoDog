@@ -1,10 +1,10 @@
 import type { User } from "@/lib/types";
 import { avatars, banners } from "@/lib/utils";
 import { Redis } from "@upstash/redis";
+import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import bcrypt from "bcryptjs";
 
 type CredentialsData = { data: string };
 
@@ -21,6 +21,9 @@ export const options: NextAuthOptions = {
         params: {
           prompt: "select_account",
         },
+      },
+      httpOptions: {
+        timeout: 10000,
       },
 
       async profile(profile) {

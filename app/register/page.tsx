@@ -19,7 +19,7 @@ export default function Register() {
   const router = useRouter();
   const { users: allUsers, isLoading } = useUsers();
   const { data: session } = useSession();
-  const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false);
+  const [isButtonLoading, setIsButtonLoading] = useState<boolean | 'Google'>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isError, setIsError] = useState<RegistrationError>({ show: false });
   const [isValid, setIsValid] = useState<RegistrationError>({ show: false });
@@ -269,7 +269,7 @@ export default function Register() {
               )}
             </div>
             <div className="py-2">
-              {isButtonLoading ? (
+              {isButtonLoading === true ? (
                 <Button disabled className="w-full">
                   <Loader2 className="mr-2 h-4  animate-spin" /> Loading
                 </Button>
@@ -287,17 +287,28 @@ export default function Register() {
             <Button
               className="w-full flex items-center gap-2"
               disabled={isValid.show}
-              onClick={() => signIn("google", { redirect: true })}
+              onClick={() => {
+                setIsButtonLoading("Google");
+                signIn("google", { redirect: true });
+              }}
               type="button"
             >
-              <Image
-                width={100}
-                height={100}
-                alt="Google Icon"
-                src={GoogleIcon}
-                className="size-6"
-              />
-              <span>{mode} with Google</span>
+              {isButtonLoading === "Google" ? (
+                <Button disabled className="w-full">
+                  <Loader2 className="mr-2 h-4  animate-spin" /> Loading
+                </Button>
+              ) : (
+                <>
+                  <Image
+                    width={100}
+                    height={100}
+                    alt="Google Icon"
+                    src={GoogleIcon}
+                    className="size-6"
+                  />
+                  <span>{mode} with Google</span>
+                </>
+              )}
             </Button>
           </CardContent>
         </Card>

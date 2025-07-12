@@ -17,6 +17,11 @@ export const options: NextAuthOptions = {
       name: "google",
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+      authorization: {
+        params: {
+          prompt: "select_account",
+        },
+      },
 
       async profile(profile) {
         const existingUser = await redis.get(`user:${profile.sub}`);

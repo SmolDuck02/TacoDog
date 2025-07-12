@@ -1,0 +1,13 @@
+name: 🛡 Keep Redis Alive
+
+on:
+  schedule:
+    - cron: "0 */12 * * *" # every 12 hours UTC
+  workflow_dispatch: # allows manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🌐 Ping Render API Route
+        run: curl -sS "https://tacodog.onrender.com/api/ping?token=my-super-secret-token"

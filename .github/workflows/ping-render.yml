@@ -3,7 +3,7 @@ name: Keep TacoDog Alive
 
 on:
   schedule:
-    - cron: '*/1 0-10 * * *' # Runs every 5 minutes from 8AM–6PM GMT+8 (0–10 UTC)
+    - cron: '*/2 0-10 * * *' # Runs every 5 minutes from 8AM–6PM GMT+8 (0–10 UTC)
   workflow_dispatch:
 
 jobs:

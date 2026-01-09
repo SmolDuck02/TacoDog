@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node --import=./register.js  --trace-warnings   server.mts",
+    "dev": "node --no-deprecation --import=./register.js  --trace-warnings   server.mts",
     "dev:socket": "NODE_OPTIONS='--loader ts-node/esm --trace-warnings --no-warnings' ts-node server.mts",
     "build": "next build",
-    "start": "NODE_OPTIONS='--max_old_space_size=450' NODE_ENV=production node --import=./register.js --trace-warnings  server.mts",
+    "start": "NODE_OPTIONS='--no-deprecation --max_old_space_size=450' NODE_ENV=production node --import=./register.js --trace-warnings  server.mts",
     "lint": "next lint"
   },
   "dependencies": {
@@ -52,5 +52,8 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }

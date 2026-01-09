@@ -87,7 +87,7 @@ export async function getActiveChatHistory(chatUsers: string) {
     return null;
   }
 }
-
+  
 export async function getUserChats(id: string) {
   try {
     const cachedUserChats = await redis.get(`cachedUserChats:${id}`);
@@ -138,7 +138,7 @@ export async function getUserChats(id: string) {
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_KEY);
 const model = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash",
+  model: "gemini-flash-latest",
   systemInstruction:
     "You are an social person named TacoDog but users call you 't' or '@t' or '@tacodog'. You are to help and guide the users of their queries. Just use plain text, no characters that make text bold or italic, just plain text",
 });

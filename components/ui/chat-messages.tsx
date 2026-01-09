@@ -1,6 +1,6 @@
 import ImageDisplay from "./chat/image-display";
 import { ChatHistory, User } from "@/lib/types";
-import { iconLarge, monthDateOptions, timeOptions, yearDateOptions } from "@/lib/utils";
+import { iconLarge, monthDateOptions, TacoDog, timeOptions, yearDateOptions } from "@/lib/utils";
 import { Label } from "@radix-ui/react-label";
 import { PhoneOffIcon } from "lucide-react";
 import Image, { StaticImageData } from "next/image";
@@ -132,7 +132,7 @@ export default function ChatMesages({
             {!isAuthor && multipleMessages ? (
                   <Avatar className="mb-1 z-0 h-9 w-9">
                     <Image
-                      src={author?.avatar?.img as StaticImageData}
+                      src={senderID === TacoDog.id ? TacoDog.avatar?.img as StaticImageData : author?.avatar?.img as StaticImageData}
                       alt="User Avatar"
                       height={300}
                       width={300}
@@ -198,6 +198,8 @@ export default function ChatMesages({
                       {author.username}
                     </Label>
                   )} */}
+                  
+                  {senderID === TacoDog.id && <span className="text-xs pl-2 text-muted-foreground">TacoDog</span>}
 
                   {chatMessage && (
                     <CardContent

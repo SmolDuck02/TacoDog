@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { User } from "../types";
 
 type PropsType = {
@@ -24,9 +24,13 @@ export function UserContextProvider({ children }: PropsType) {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
     async function fetchUsers() {
+      if (hasFetched.current) return;
+      hasFetched.current = true;
+
       try {
         const res = await fetch("/api/users");
         if (!res.ok) throw new Error("Failed to fetch users");

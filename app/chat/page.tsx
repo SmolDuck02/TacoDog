@@ -145,6 +145,8 @@ export default function Chat() {
   useEffect(() => {
     //also the method for handling seenMessages
     socket.on(`receiveChat:${currentUser?.id}`, async (newChat) => {
+      if(newChat === undefined) return;
+
       if(newChat.receiverID) {
         const updatedChats = [...(activeUserChat.chats || []), newChat.newChatMessage];
         updateActiveChat(updatedChats);
@@ -364,7 +366,7 @@ export default function Chat() {
       if (!currentText) return;
 
       //ai output
-      if (currentText.startsWith("@t")) {
+      if (currentText.startsWith("@t") || activeUserChat.user.id === TacoDog.id) {
         socket.emit("typing", { senderID: +TacoDog.id, receiverID: currentUser.id });
 
         const result = await askTacoDog(activeUserChat.chats || [], currentText);

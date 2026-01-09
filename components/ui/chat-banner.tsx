@@ -9,6 +9,7 @@ export default function ChatBanner({ activeChatUser }: { activeChatUser: User })
         src={activeChatUser?.banner?.img || defaultBanner.src}
         className=" object-cover brightness-95"
         alt="user banner"
+        priority={true}
       />
       <div className="absolute bottom-1 lg:bottom-auto  h-fit text-end flex flex-col drop-shadow-lg  text-white ">
         <span>

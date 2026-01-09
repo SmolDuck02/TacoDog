@@ -122,7 +122,7 @@ export default function ChatSidebar(props: ChatSidebarProps) {
         >
           <div
             className={`text-xl   px-1 relative flex w-full items-center  ${
-              isChatSidebar ? "justify-between pl-2 " : "justify-center"
+              isChatSidebar ? "justify-between pl-1 " : "justify-center"
             } `}
           >
             {isChatSidebar && <span>Chats</span>}
@@ -298,7 +298,7 @@ export default function ChatSidebar(props: ChatSidebarProps) {
           }
            flex  text-muted-foreground  pb-4 px-[14px] `}
         >
-          <ProfileModal isChatSidebar={isChatSidebar as boolean} />
+          {isChatSidebar && <ProfileModal isChatSidebar={isChatSidebar as boolean} />}
 
           <button
             tabIndex={0}

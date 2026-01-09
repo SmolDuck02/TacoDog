@@ -120,16 +120,32 @@ export default function ChatMesages({
 
         const date = new Date(message.date).toLocaleString("en-US", options);
         const isLastMessage = message === activeChatHistory.at(-1);
+        const multipleMessages = activeChatHistory[index]?.senderID !== activeChatHistory[index+1]?.senderID;
+        
         return (
           <div
             key={index}
-            className={` flex w-full gap-4  items-center  ${
+            className={` flex w-full gap-4 ${uploads ? "items-end" : "items-center"}  ${
               isAuthor ? "justify-end pl-1/5" : "pr-1/5 justify-start"
             } `}
           >
+            {!isAuthor && multipleMessages ? (
+                  <Avatar className="mb-1 z-0 h-9 w-9">
+                    <Image
+                      src={author?.avatar?.img as StaticImageData}
+                      alt="User Avatar"
+                      height={300}
+                      width={300}
+                      className="aspect-square h-full w-full"
+                    />
+                    <AvatarFallback>{author.username[0]}</AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <div className="h-9 w-9"></div>
+                )}
             {!chatMessage && !uploads ? (
               // <div className="text-sm text-muted-secondary gap-4 flex justify-center items-center  text-center py-2">
-              <div>
+              <div className="relative">
                 <CardContent
                   id={index.toString()}
                   key={index}
@@ -160,7 +176,7 @@ export default function ChatMesages({
                 <Label
                   className={`${isAuthor ? "justify-end " : "justify-start"}  ${
                     isLastMessage ? "opacity-100 -bottom-4" : "opacity-0  bottom-0"
-                  }  flex px-2 text-xs`}
+                  }  flex px-2 text-xs absolute bottom-0 right-0`}
                 >
                   {/* {new Date(message.date).toLocaleString("en-US", dateTimeOptions)} */}
                   {date}
@@ -169,18 +185,6 @@ export default function ChatMesages({
             ) : (
               // </div>
               <>
-                {!isAuthor && (
-                  <Avatar className="mb-1 z-0">
-                    <Image
-                      src={author?.avatar?.img as StaticImageData}
-                      alt="User Avatar"
-                      height={300}
-                      width={300}
-                      className="aspect-square h-full w-full"
-                    />
-                    <AvatarFallback>{author.username[0]}</AvatarFallback>
-                  </Avatar>
-                )}
                 <div
                   className={`${
                     isAuthor ? "items-end" : "items-start"
@@ -205,17 +209,18 @@ export default function ChatMesages({
                     </CardContent>
                   )}
 
-                  {uploads && <ImageDisplay fileUploads={uploads} />}
+                  {uploads && <ImageDisplay fileUploads={uploads} chat={true}/>}
 
                   {isSeen && isLastMessage && isAuthor ? (
-                    <div className="activeUserAvatar absolute w-fit -bottom-1 -right-1  z-10">
+                    <div className="activeUserAvatar w-fit z-10 pt-1 pr-1 flex items-center gap-1">
                       <Image
                         src={activeChatUser.avatar?.img as StaticImageData}
                         alt="Active Chat User Avatar"
                         height={300}
                         width={300}
-                        className="aspect-square rounded-full object-cover h-5 w-5"
+                        className="aspect-square rounded-full object-cover h-3 w-3"
                       />
+                      <span className=" text-xs text-muted-foreground font-light  inline-block">Seen {date}</span> 
                     </div>
                   ) : (
                     <Label

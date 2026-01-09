@@ -13,7 +13,7 @@ import { askTacoDog, getUserChats } from "@/lib/api";
 import { useUsers } from "@/lib/context/UserContext";
 import { socket } from "@/lib/socketClient";
 import { ChatHistory, User, UserChat } from "@/lib/types";
-import { chatUsersIDBuilder, iconMedium, initializeCamera, TacoDog } from "@/lib/utils";
+import { chatUsersIDBuilder, iconMedium, initializeCamera, TacoDog, toBase64 } from "@/lib/utils";
 import TacoDogLogo from "@/public/logo.png";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import { PaperclipIcon, SendIcon, SmileIcon } from "lucide-react";
@@ -52,6 +52,7 @@ export default function Chat() {
   const [callDuration, setCallDuration] = useState<{ start: number; date: Date } | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [isTyping, setIsTyping] = useState<boolean>(false);
+  const [hasText, setHasText] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
@@ -59,9 +60,14 @@ export default function Chat() {
   const searchRef = useRef<HTMLInputElement>(null);
   const chatMessageRef = useRef<HTMLSpanElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
+  const isFetchingChatsRef = useRef(false);
 
   useEffect(() => {
-    if (status === "authenticated" && !userChats) {
+    if (status === "authenticated" && !userChats && currentUser?.id) {
+      
+      if (isFetchingChatsRef.current) return;
+      
+      isFetchingChatsRef.current = true;
       const { id } = currentUser;
 
       getUserChats(id)
@@ -74,9 +80,10 @@ export default function Chat() {
         .catch((error) => console.log("Error getting user chats: ", error))
         .finally(() => {
           setIsUserChatsLoading(false);
+          isFetchingChatsRef.current = false;
         });
     }
-  }, [status, currentUser, userChats]);
+  }, [status, currentUser?.id, userChats]);
 
   const handleMakeNewChat = useCallback(() => {
     setSearchText("");
@@ -132,11 +139,18 @@ export default function Chat() {
   };
 
   // TODO implement video call queueing for when offline to onlione
-  // TODO implement delivered
+  // TODO handle seen messages improvement
+  // TODO: timestamps improvement
   // TODO clean code
   useEffect(() => {
     //also the method for handling seenMessages
     socket.on(`receiveChat:${currentUser?.id}`, async (newChat) => {
+      if(newChat.receiverID) {
+        const updatedChats = [...(activeUserChat.chats || []), newChat.newChatMessage];
+        updateActiveChat(updatedChats);
+        return;
+      }
+
       if (!activeUserChat) return;
 
       if (newChat.senderID === activeUserChat.user.id) {
@@ -230,8 +244,16 @@ export default function Chat() {
       if (!userChats || !activeUserChat) return;
 
       const updatedUserChats = [...userChats];
-      const activeUserChatIndex = updatedUserChats.indexOf(activeUserChat);
-
+      
+      const activeUserChatIndex = updatedUserChats.findIndex(
+        (chat) => chat.user.id === activeUserChat.user.id
+      );
+        
+      if (activeUserChatIndex === -1) {
+        console.warn("Could not find active chat in user list to update");
+        return;
+      }
+      
       updatedUserChats[activeUserChatIndex].chats = activeUserChatHistory;
       setUserChats(updatedUserChats);
     },
@@ -279,45 +301,73 @@ export default function Chat() {
       | React.MouseEvent<HTMLButtonElement>
       | React.MouseEvent<SVGSVGElement>
   ) => {
-    if ("key" in e && e.key !== "Enter") {
-      return;
+    if ("key" in e) {
+      if (e.key === "Enter") {
+        if (e.shiftKey) {
+          // Shift + Enter detected:
+          // Do NOT preventDefault. Do NOT return (to send).
+          // Just 'return' to let the browser insert the line break.
+          return;
+        }
+        // Plain Enter detected:
+        // Prevent the default new line, and proceed to send code below.
+        e.preventDefault();
+      } else {
+        // Any other key? Do nothing.
+        return;
+      }
+    } else {
+      // Mouse click? Prevent default form actions if any.
+      e.preventDefault();
     }
 
-    e.preventDefault();
+    const currentText = chatMessageRef.current?.innerText || "";
+    const hasFiles = (fileUploads as File[])?.length > 0;
 
     // if (socket.connected && e.key === "Enter" && activeChatUser && currentUser && chatMessage) {
-    if (socket.connected && currentUser && (chatMessage || (fileUploads as File[])?.length > 0)) {
-      if (chatMessageRef.current) {
-        chatMessageRef.current.textContent =
-          document.activeElement !== chatMessageRef.current ? "Enter message..." : "";
+    if (socket.connected && currentUser && (currentText.trim() || hasFiles)) {
+      let processedUploads: string[] = [];
+      if (hasFiles) {
+        processedUploads = await Promise.all(
+          (fileUploads as File[]).map((file) => toBase64(file))
+        );
       }
+
+      if (chatMessageRef.current) {
+        chatMessageRef.current.textContent = "";
+      }
+
+      setFileUploads(null);
 
       const chatData = {
         receiverID: activeUserChat?.user.id,
         newChatMessage: {
           senderID: currentUser.id,
-          chatMessage: chatMessage,
-          uploads: fileUploads,
+          chatMessage: hasText ? currentText : "",
+          uploads: processedUploads,
           date: new Date(),
         } as ChatHistory,
         activeChatHistory: activeUserChat?.chats || [],
       };
+
+      setChatMessage("");
+      setHasText(false);
+      
 
       const updatedChats = [...(activeUserChat?.chats || []), chatData.newChatMessage];
       updateActiveChat(updatedChats);
 
       //user input
       socket.emit("sendChat", chatData);
-
       setFileUploads(null);
 
-      if (!chatMessage) return;
+      if (!currentText) return;
 
       //ai output
-      if (chatMessage.startsWith("@t")) {
+      if (currentText.startsWith("@t")) {
         socket.emit("typing", { senderID: +TacoDog.id, receiverID: currentUser.id });
 
-        const result = await askTacoDog(activeUserChat.chats || [], chatMessage);
+        const result = await askTacoDog(activeUserChat.chats || [], currentText);
         const { chatMessage: AIChatMessage } = result;
         const aiChatData = {
           senderID: TacoDog.id,
@@ -326,7 +376,6 @@ export default function Chat() {
           date: new Date(),
         } as ChatHistory;
 
-        console.log("lopppp", [...(activeUserChat?.chats || []), AIChatMessage]);
         socket.emit("typing", { senderID: TacoDog.id, receiverID: currentUser.id, state: false });
 
         const updatedChats = [...(activeUserChat?.chats || []), aiChatData];
@@ -393,9 +442,8 @@ export default function Chat() {
   }, [activeUserChat?.user, isLoading]);
 
   const handleFocus = () => {
-    if (chatMessageRef.current && !chatMessage) {
+    if (chatMessageRef.current && !hasText) {
       chatMessageRef.current.textContent = "";
-      setChatMessage("");
     }
 
     if (activeUserChat)
@@ -403,8 +451,8 @@ export default function Chat() {
   };
 
   const handleBlur = () => {
-    if (chatMessageRef.current && !chatMessage) {
-      chatMessageRef.current.textContent = "Enter message...";
+    if (chatMessageRef.current && !hasText) {
+      chatMessageRef.current.textContent = "Say Bao...";
     }
 
     if (activeUserChat)
@@ -594,6 +642,8 @@ export default function Chat() {
     };
   }, [fileUploads]);
 
+  const hasImages = (fileUploads as File[])?.length > 0;
+
   const emptyChatMessages = (
     <CardDescription className="select-none h-full text-muted-secondary/80 font-light  text-center w-full flex text-xs lg:text-base  flex-col justify-center items-center">
       <Image
@@ -648,7 +698,7 @@ export default function Chat() {
         <ChatBanner activeChatUser={activeUserChat?.user as User} />
         <Hello isLoading setIsLoading={setIsLoading} />
 
-        <div className="w-full  flex-1 mx-auto flex flex-col relative bg-[#eee] dark:bg-gray-900">
+        <div className="w-full h-screen flex-1 mx-auto flex flex-col relative bg-[#eee] dark:bg-gray-900">
           <ChatHeader
             makeNewChat={makeNewChat}
             setMakeNewChat={setMakeNewChat}
@@ -668,7 +718,7 @@ export default function Chat() {
             ref={messageContainerRef}
             className={` ${
               showCamera ? "justify-center" : "justify-end"
-            } flex px-[15%] lg:px-[25%]  w-full  mx-auto gap-5 h-full items-center justify-center scrollbar scroll-smooth flex-col overflow-y-scroll`}
+            } flex px-[15%] lg:px-[22%]  w-full  mx-auto gap-5 flex-1 min-h-0 items-center justify-center scrollbar scroll-smooth flex-col overflow-y-scroll`}
           >
             <div className="h-[4rem]" />
             {/* camera */}
@@ -681,7 +731,7 @@ export default function Chat() {
                 className="z-[48]  aspect-video  "
               />
             ) : (
-              <div className=" h-[calc(100vh-14rem)] lg:h-[calc(100vh-19rem)]  relative w-full lg:w-[85%] flex flex-col gap-2 px-3  ">
+              <div className=" h-[calc(100vh-14rem)] lg:h-[calc(100vh-19rem)]  relative w-full lg:w-[85%] flex flex-col  px-3  ">
                 {activeUserChat?.chats ? (
                   <ChatMessages
                     activeChatHistory={activeUserChat?.chats}
@@ -702,10 +752,10 @@ export default function Chat() {
           {/* empty space importanrt */}
           <div
             className={`${
-              (fileUploads as File[])?.length > 0 ? "min-h-[9rem]" : "min-h-[6.5rem]"
+              hasImages ? "min-h-[9rem]" : "min-h-[6.5rem]"
             } flex justify-center items-start`}
           >
-            {isTyping && (
+            {isTyping && activeUserChat?.user?.id !== currentUser?.id && (
               <div className="duration-500 ease-in-out text-xs text-muted-secondary/40  w-fit flex gap-0 z-100">
                 {activeUserChat?.user.username} is typing
                 <h2 className="text-lg leading-none animate-typing delay-0 ">.</h2>
@@ -715,60 +765,67 @@ export default function Chat() {
             )}
           </div>
           <div
-            className={`${(fileUploads as File[])?.length > 0 ? "min-h-[9rem]" : "min-h-[5rem]"} 
-                   border-t bg-[#ebe8e4] dark:bg-slate-950 px-[15%] lg:px-[27%] absolute bottom-0 flex flex-col gap-2 w-full items-start  justify-end pb-5  mx-auto 
+            // className={`${(fileUploads as File[])?.length > 0 ? "min-h-[9rem]" : "min-h-[5rem]"} 
+            className={`min-h-[5rem] 
+                   border-t bg-[#ebe8e4] dark:bg-slate-950 px-[15%] lg:px-[27%] pt-3 absolute bottom-0 flex flex-col gap-2 w-full items-start  justify-end  mx-auto 
                   `}
           >
-            {(fileUploads as File[])?.length > 0 && (
+            {hasImages && (
               <ImageDisplay fileUploads={fileUploads as File[]} setFileUploads={setFileUploads} />
             )}
-            <div className={`gap-2 flex w-full items-center h-fit relative `}>
+            <div className={`gap-2 flex w-full items-end h-fit relative ${hasImages ? "pb-8" : "pb-5"}`}>
               <span
                 tabIndex={0}
                 ref={chatMessageRef}
                 onFocus={() => handleFocus()}
                 onBlur={() => handleBlur()}
-                onInput={(e) => setChatMessage((e.target as HTMLElement).textContent)}
+                onInput={(e) => {
+                  const text = e.currentTarget.textContent;
+                  if (text && !hasText) setHasText(true);
+                  if (!text && hasText) setHasText(false);
+                }}
                 onDrop={(e) => handleFileChange(e)}
                 contentEditable
                 className={`${
-                  chatMessage ? "" : "text-muted-secondary/80"
-                } max-h-12 flex-wrap break-all focus:outline-none focus:ring-0 focus:border-muted-foreground dark:bg-gray-500/10 bg-[white] px-4 h-fit py-2 overflow-y-auto scrollbar items-center inline-flex rounded-lg border  w-full textarea`}
+                  hasText ? "" : "text-muted-secondary/80"
+                }  max-h-32 flex-wrap break-all focus:outline-none focus:ring-0 focus:border-muted-foreground dark:bg-gray-500/10 bg-[white] px-2 h-fit py-3 overflow-y-auto scrollbar items-center inline-flex rounded-lg border  w-full textarea whitespace-pre-wrap`}
                 role="textbox"
                 onKeyDown={handleSendMessage}
               />
-              <SmileIcon
-                id="emoji-icon"
-                size={iconMedium}
-                className="cursor-pointer  text-muted-secondary/80"
-                onClick={() => setShowPicker(true)}
-              />
-
-              <div className="h-fit flex self-center">
-                <input
-                  type="file"
-                  className="hidden"
-                  onChange={handleFileChange}
-                  accept={".png,.jpg,.jpeg"}
-                  multiple
-                  ref={fileInputRef}
+              <div className="gap-2 flex h-full py-3">
+                <SmileIcon
+                  id="emoji-icon"
+                  size={iconMedium}
+                  className="cursor-pointer  text-muted-secondary/80"
+                  onClick={() => setShowPicker(true)}
                 />
 
-                <PaperclipIcon
-                  className="cursor-pointer  text-muted-secondary/80"
+                <div className="h-fit flex self-center">
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={handleFileChange}
+                    accept={".png,.jpg,.jpeg"}
+                    multiple
+                    ref={fileInputRef}
+                  />
+
+                  <PaperclipIcon
+                    className="cursor-pointer  text-muted-secondary/80"
+                    size={iconMedium}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      fileInputRef.current?.click();
+                    }}
+                  />
+                </div>
+
+                <SendIcon
+                  className="cursor-pointer text-muted-secondary/80"
                   size={iconMedium}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    fileInputRef.current?.click();
-                  }}
+                  onClick={(e) => handleSendMessage(e)}
                 />
               </div>
-
-              <SendIcon
-                className="cursor-pointer text-muted-secondary/80"
-                size={iconMedium}
-                onClick={(e) => handleSendMessage(e)}
-              />
             </div>
           </div>
 

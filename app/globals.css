@@ -5,7 +5,7 @@
 @layer base {
   :root {
     --color: #333;
-    --inverse-color: #ddd;
+    --inverse-color: #c8c8c8;
 
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -41,7 +41,8 @@
   }
 
   .dark {
-    --color: #ddd;
+    /* --color: #ddd; */
+    --color: #c8c8c8;
     --inverse-color: #333;
 
     --background: 222.2 84% 4.9%;
@@ -100,7 +101,7 @@
 
   .scrollbar::-webkit-scrollbar {
     width: 7px;
-    height: 10px;
+    height: 7px;
   }
 
   .scrollbar::-webkit-scrollbar-track {
@@ -109,7 +110,7 @@
   }
 
   .scrollbar::-webkit-scrollbar-thumb {
-    background: rgb(2 6 23);
+    background: rgb(100, 105, 116);
     border-radius: 100vh;
   }
 

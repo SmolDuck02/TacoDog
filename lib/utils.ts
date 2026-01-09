@@ -118,3 +118,10 @@ async function openCamera(deviceId: string, minWidth: number, minHeight: number)
 export function chatUsersIDBuilder(currentUserID: string, activeChatUserID: string) {
   return `_${[currentUserID, activeChatUserID].sort().join("_")}_`;
 }
+
+export const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = () => resolve(reader.result as string);
+  reader.onerror = error => reject(error);
+});

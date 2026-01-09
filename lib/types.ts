@@ -24,7 +24,7 @@ export interface ChatHistory {
   end?: number;
   isSeen?: boolean;
   isDelivered?: boolean;
-  uploads?: File[];
+  uploads?: (File | string | any)[];
 }
 export interface RegistrationError {
   show: boolean;

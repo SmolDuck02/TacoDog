@@ -18,6 +18,7 @@ app.prepare().then(() => {
   });
   const httpServer = createServer(handler);
   const io = new Server(httpServer, {
+    maxHttpBufferSize: 50 * 1024 * 1024,
     connectionStateRecovery: {
       // the backup duration of the sessions and the packets
       maxDisconnectionDuration: 2 * 60 * 1000,
@@ -38,6 +39,9 @@ app.prepare().then(() => {
 
       io.emit(`receiveChat:${receiverID}`, newChatMessage);
 
+      if (newChatMessage.type && newChatMessage.type == "call") {
+        io.emit(`receiveChat:${newChatMessage.senderID}`, {newChatMessage, receiverID});
+      }
       activeChatHistory.push(newChatMessage);
 
       // await redis.set(`chatHistory:${chatUsersID}`, activeChatHistory);

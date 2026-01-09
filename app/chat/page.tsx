@@ -439,7 +439,7 @@ export default function Chat() {
 
     if (document.activeElement != chatMessageRef.current && chatMessageRef.current) {
       setChatMessage("");
-      chatMessageRef.current.textContent = "Enter message...";
+      chatMessageRef.current.textContent = "Say Bao...";
     }
   }, [activeUserChat?.user, isLoading]);
 

@@ -1,12 +1,15 @@
 name: 🛡 Keep TacoDog Alive (09:00 - 22:00 PHT)
 
 on:
+  push:
+    branches:
+      - main
   schedule:
     # UTC conversion:
     # 01:00 UTC = 09:00 AM PHT
     # 14:00 UTC = 10:00 PM PHT
-    # This runs every 14 mins during those hours
-    - cron: "*/14 1-14 * * *"
+    # This runs every 13 mins during those hours
+    - cron: "*/13 0-14 * * *"
   workflow_dispatch:
 
 jobs:

@@ -9,6 +9,14 @@ const nextConfig = {
       },
     ],
   },
+  // SEO optimizations
+  compress: true,
+  poweredByHeader: false,
+  generateEtags: true,
+  // Enable static optimization
+  reactStrictMode: true,
+  // Optimize fonts
+  optimizeFonts: true,
 };
 
 export default nextConfig;

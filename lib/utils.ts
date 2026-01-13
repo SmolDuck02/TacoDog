@@ -2,7 +2,7 @@ import avatarOne from "@/public/avatars/avatarOne.png";
 import avatarThree from "@/public/avatars/avatarThree.png";
 import avatarTwo from "@/public/avatars/avatarTwo.png";
 import defaultAvatar from "@/public/avatars/defaultAvatar.png";
-import tacoAvatar from "@/public/avatars/tacoAvatar.png";
+import tacoAvatar from "@/public/avatars/tacoAvatar.webp";
 import defaultBannerIMG from "@/public/bg/defaultBG.avif";
 import plant from "@/public/bg/plant.jpg";
 import sea from "@/public/bg/sea.jpg";

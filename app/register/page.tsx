@@ -316,11 +316,14 @@ export default function Register() {
 
       <div className=" bottom-0 lg:bottom-auto  w-full right-[-58%]  absolute ">
         <Image
-          src="/avatars/tacoAvatar.png"
+          src="/avatars/tacoAvatar.webp"
           alt="logo"
           height={500}
           width={500}
+          priority // Remove lazy loading for LCP element
+          fetchPriority="high" // Prioritize LCP image
           className=" rounded-full scale-x-[-1]  object-cover  w-[80%] lg:w-[50%] brightness-100"
+          sizes="(max-width: 1024px) 80vw, 50vw" 
         />
       </div>
     </main>

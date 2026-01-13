@@ -87,7 +87,7 @@ export const metadata: Metadata = {
     // google: "your-google-verification-code",
     // yandex: "your-yandex-verification-code",
     // bing: "your-bing-verification-code",
-    google: "u88gRGpPwFlH-GLbZJc48HP1qx6Al-PUCzBVUq752L0",
+    google: "KA4G_KaqIXzCKWVyfxpFmpeL5gzWbmiEsxNm6U1g5Bk",
   },
   category: "social",
 };

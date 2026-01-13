@@ -87,6 +87,7 @@ export const metadata: Metadata = {
     // google: "your-google-verification-code",
     // yandex: "your-yandex-verification-code",
     // bing: "your-bing-verification-code",
+    google: "u88gRGpPwFlH-GLbZJc48HP1qx6Al-PUCzBVUq752L0",
   },
   category: "social",
 };
@@ -122,7 +123,7 @@ export default async function RootLayout({
       "Real-time messaging",
       "Video calls",
       "AI assistant",
-      "File sharing",
+      "Image sharing",
       "Group chats"
     ]
   };

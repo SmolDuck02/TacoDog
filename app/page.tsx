@@ -5,11 +5,6 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { MessageCircle, Video, Users, Zap, Shield, Cloud } from "lucide-react";
-import avatarOne from "@/public/avatars/avatarOne.png";
-import avatarTwo from "@/public/avatars/avatarTwo.png";
-import avatarThree from "@/public/avatars/avatarThree.png";
-import defaultAvatar from "@/public/avatars/defaultAvatar.png";
-import tacoAvatar from "@/public/avatars/tacoAvatar.webp";
 
 export const metadata: Metadata = {
   title: "TacoDog - AI-Powered Social Messaging App",
@@ -25,11 +20,11 @@ export const metadata: Metadata = {
 
 export default function Home() {
   const avatars = [
-    { src: avatarOne, alt: "User 1" },
-    { src: avatarTwo, alt: "User 2" },
-    { src: avatarThree, alt: "User 3" },
-    { src: defaultAvatar, alt: "User 4" },
-    { src: tacoAvatar, alt: "TacoDog" },
+    { src: "/avatars/avatarOne.png", alt: "User 1" },
+    { src: "/avatars/avatarTwo.png", alt: "User 2" },
+    { src: "/avatars/avatarThree.png", alt: "User 3" },
+    { src: "/avatars/defaultAvatar.png", alt: "User 4" },
+    { src: "/avatars/tacoAvatar.webp", alt: "TacoDog" },
   ];
 
   const icons = [
@@ -148,7 +143,6 @@ export default function Home() {
                 const radius = 45; // percentage
                 const x = 50 + radius * Math.cos((angle - 90) * (Math.PI / 180));
                 const y = 50 + radius * Math.sin((angle - 90) * (Math.PI / 180));
-                const avatarSrc = typeof avatar.src === 'string' ? avatar.src : avatar.src.src;
                 
                 return (
                   <div
@@ -161,7 +155,7 @@ export default function Home() {
                     }}
                   >
                     <Avatar className="w-12 h-12 md:w-16 md:h-16 border-2 border-primary/30 dark:border-primary/40 shadow-lg">
-                      <AvatarImage src={avatarSrc} alt={avatar.alt} />
+                      <AvatarImage src={avatar.src} alt={avatar.alt} />
                       <AvatarFallback>{avatar.alt[0]}</AvatarFallback>
                     </Avatar>
                   </div>

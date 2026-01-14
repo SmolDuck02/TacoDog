@@ -1,13 +1,3 @@
-import avatarOne from "@/public/avatars/avatarOne.png";
-import avatarThree from "@/public/avatars/avatarThree.png";
-import avatarTwo from "@/public/avatars/avatarTwo.png";
-import defaultAvatar from "@/public/avatars/defaultAvatar.png";
-import tacoAvatar from "@/public/avatars/tacoAvatar.webp";
-import defaultBannerIMG from "@/public/bg/defaultBG.avif";
-import plant from "@/public/bg/plant.jpg";
-import sea from "@/public/bg/sea.jpg";
-import shore from "@/public/bg/shore.jpg";
-import tacoBG from "@/public/bg/tacoBG.jpg";
 import { Redis } from "@upstash/redis";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -21,23 +11,24 @@ export const iconSmall = 18;
 export const iconMedium = 22;
 
 export const avatars = [
-  { img: defaultAvatar, name: "Jacket" },
-  { img: avatarOne, name: "Snacks" },
-  { img: avatarTwo, name: "Cream" },
-  { img: avatarThree, name: "Pizza" },
+  { img: "/avatars/defaultAvatar.png", name: "Jacket" },
+  { img: "/avatars/avatarOne.png", name: "Snacks" },
+  { img: "/avatars/avatarTwo.png", name: "Cream" },
+  { img: "/avatars/avatarThree.png", name: "Pizza" },
 ];
+
 export const banners = [
-  { img: defaultBannerIMG, name: "Moss", source: "Maksim Samuilionak" },
-  { img: plant, name: "Plant", source: "Junel Mujar" },
-  { img: shore, name: "Shore", source: "Marc Kleen" },
-  { img: sea, name: "Sea", source: "Rafael Garcin" },
+  { img: "/bg/defaultBG.avif", name: "Moss", source: "Maksim Samuilionak" },
+  { img: "/bg/plant.jpg", name: "Plant", source: "Junel Mujar" },
+  { img: "/bg/shore.jpg", name: "Shore", source: "Marc Kleen" },
+  { img: "/bg/sea.jpg", name: "Sea", source: "Rafael Garcin" },
 ];
 
 export const TacoDog = {
   id: "0",
   username: "TacoDog",
-  avatar: { img: tacoAvatar, name: "Taco" },
-  banner: { img: tacoBG, name: "Taco", source: "Ingmar H" },
+  avatar: { img: "/avatars/tacoAvatar.webp", name: "Taco" },
+  banner: { img: "/bg/tacoBG.jpg", name: "Taco", source: "Ingmar H" },
 };
 
 export const redis = new Redis({
@@ -125,3 +116,82 @@ export const toBase64 = (file: File) => new Promise<string>((resolve, reject) =>
   reader.onload = () => resolve(reader.result as string);
   reader.onerror = error => reject(error);
 });
+
+// Update the getImageSrc function to handle old Next.js static paths
+export function getImageSrc(img: any): string {
+  // If it's a string, normalize it
+  if (typeof img === 'string') {
+    return normalizeImagePath(img);
+  }
+  // If it's a StaticImageData object or serialized object, extract src
+  if (img && typeof img === 'object' && 'src' in img) {
+    return normalizeImagePath(img.src);
+  }
+  // Fallback
+  return '/avatars/defaultAvatar.png';
+}
+
+// New function to normalize old Next.js static paths to public paths
+function normalizeImagePath(path: string): string {
+  if (!path || typeof path !== 'string') {
+    return '/avatars/defaultAvatar.png';
+  }
+
+  // If it's already a public path, return as-is
+  if (path.startsWith('/avatars/') || path.startsWith('/bg/')) {
+    return path;
+  }
+
+  // Handle old Next.js static media paths
+  // Pattern: /_next/static/media/filename.hash.ext
+  if (path.includes('/_next/static/media/')) {
+    const filename = path.split('/_next/static/media/')[1];
+    
+    // Extract base filename before hash (e.g., "avatarThree.6034fbc6.png" -> "avatarThree")
+    const baseName = filename.split('.')[0];
+    
+    // Map to public folder paths
+    const avatarMap: Record<string, string> = {
+      'defaultAvatar': '/avatars/defaultAvatar.png',
+      'avatarOne': '/avatars/avatarOne.png',
+      'avatarTwo': '/avatars/avatarTwo.png',
+      'avatarThree': '/avatars/avatarThree.png',
+      'tacoAvatar': '/avatars/tacoAvatar.webp',
+    };
+    
+    const bannerMap: Record<string, string> = {
+      'defaultBG': '/bg/defaultBG.avif',
+      'plant': '/bg/plant.jpg',
+      'sea': '/bg/sea.jpg',
+      'shore': '/bg/shore.jpg',
+      'tacoBG': '/bg/tacoBG.jpg',
+    };
+    
+    // Check avatar map first
+    if (avatarMap[baseName]) {
+      return avatarMap[baseName];
+    }
+    
+    // Check banner map
+    if (bannerMap[baseName]) {
+      return bannerMap[baseName];
+    }
+    
+    // If not found, try to infer from filename
+    if (baseName.includes('avatar') || baseName.includes('Avatar')) {
+      return `/avatars/${baseName}.png`;
+    }
+    
+    if (baseName.includes('BG') || baseName.includes('banner')) {
+      return `/bg/${baseName}.jpg`;
+    }
+  }
+
+  // If it's a relative path that doesn't start with /, add /avatars/ prefix
+  if (!path.startsWith('/')) {
+    return `/avatars/${path}`;
+  }
+
+  // Return fallback for unrecognized paths
+  return '/avatars/defaultAvatar.png';
+}

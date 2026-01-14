@@ -1,5 +1,5 @@
 import { User, UserChat } from "@/lib/types";
-import { iconLarge, TacoDog } from "@/lib/utils";
+import { getImageSrc, iconLarge, TacoDog } from "@/lib/utils";
 import { Loader, Video, VideoOff } from "lucide-react";
 import Image, { StaticImageData } from "next/image";
 import { Avatar, AvatarFallback } from "../avatar";
@@ -70,7 +70,7 @@ export default function ChatHeader(props: Props) {
                 height={300}
                 width={300}
                 className="aspect-square h-full w-full"
-                src={activeUserChat?.user?.avatar?.img as StaticImageData}
+                src={getImageSrc(activeUserChat?.user?.avatar?.img)}
               />
               <AvatarFallback>{activeUserChat?.user?.username[0]}</AvatarFallback>
             </Avatar>

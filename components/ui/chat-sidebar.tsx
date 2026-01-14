@@ -1,8 +1,7 @@
 "use client";
 
 import { User, UserChat } from "@/lib/types";
-import { iconMedium, monthDateOptions, timeOptions, yearDateOptions } from "@/lib/utils";
-import defaultAvatar from "@/public/avatars/defaultAvatar.png";
+import { getImageSrc, iconMedium, monthDateOptions, timeOptions, yearDateOptions } from "@/lib/utils";
 import { Columns2, Search, SquarePen, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
@@ -232,7 +231,7 @@ export default function ChatSidebar(props: ChatSidebarProps) {
                         height={300}
                         width={300}
                         className="aspect-square rounded-full h-full w-full"
-                        src={user.avatar?.img || defaultAvatar}
+                        src={getImageSrc(user.avatar?.img)}
                       />
                     </div>
                   )}
@@ -248,7 +247,7 @@ export default function ChatSidebar(props: ChatSidebarProps) {
                         height={300}
                         width={300}
                         className={`aspect-square h-full w-full `}
-                        src={user?.avatar?.img || defaultAvatar}
+                        src={getImageSrc(user?.avatar?.img)}
                       />
                     </Avatar>
                     {isChatSidebar && (

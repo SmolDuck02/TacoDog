@@ -1,7 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "@/lib/types";
-import { iconLarge } from "@/lib/utils";
-import defaultAvatar from "@/public/avatars/defaultAvatar.png";
+import { getImageSrc, iconLarge } from "@/lib/utils";
 import { PhoneCall, X } from "lucide-react";
 import Image from "next/image";
 import { Button } from "../ui/button";
@@ -23,7 +22,7 @@ export function IncomingCallModal({
         {/* profile menu component */}
         <CardHeader className="w-[30rem] py-3 relative flex flex-row   justify-center items-center ">
           <Image
-            src={caller?.banner?.img.src || defaultAvatar}
+            src={getImageSrc(caller?.banner?.img)}
             alt="Caller Banner"
             fill
             className="h-auto w-auto rounded-lg  object-cover brightness-75"
@@ -33,7 +32,7 @@ export function IncomingCallModal({
             items-center  w-fit cursor-pointer `}
           >
             <Avatar className="h-16 w-16 aspect-square ">
-              <AvatarImage src={caller?.avatar?.img.src || defaultAvatar.src} />
+              <AvatarImage src={getImageSrc(caller?.avatar?.img)} />
               <AvatarFallback>{caller?.username[0]}</AvatarFallback>
             </Avatar>
             <span className={`text-3xl font-bold`}>{caller?.username}</span>

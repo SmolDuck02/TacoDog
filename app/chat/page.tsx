@@ -14,7 +14,6 @@ import { useUsers } from "@/lib/context/UserContext";
 import { socket } from "@/lib/socketClient";
 import { ChatHistory, User, UserChat } from "@/lib/types";
 import { chatUsersIDBuilder, iconMedium, initializeCamera, TacoDog, toBase64 } from "@/lib/utils";
-import TacoDogLogo from "@/public/logo.png";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import { PaperclipIcon, SendIcon, SmileIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -649,7 +648,7 @@ export default function Chat() {
   const emptyChatMessages = (
     <CardDescription className="select-none h-full text-muted-secondary/80 font-light  text-center w-full flex text-xs lg:text-base  flex-col justify-center items-center">
       <Image
-        src={TacoDogLogo.src}
+        src="/logo.png"
         alt="tacodog logo"
         width={300}
         height={300}

@@ -189,7 +189,17 @@ function normalizeImagePath(path: string): string {
 
   // If it's a relative path that doesn't start with /, add /avatars/ prefix
   if (!path.startsWith('/')) {
+    // Check if it looks like a banner path
+    if (path.toLowerCase().includes('bg') || path.toLowerCase().includes('banner')) {
+      return `/bg/${path}`;
+    }
     return `/avatars/${path}`;
+  }
+
+  // Return fallback - check if path contains banner keywords
+  const lowerPath = path.toLowerCase();
+  if (lowerPath.includes('bg') || lowerPath.includes('banner')) {
+    return '/bg/defaultBG.avif';
   }
 
   // Return fallback for unrecognized paths

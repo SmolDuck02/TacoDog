@@ -2,6 +2,7 @@ import { User } from "@/lib/types";
 import Image, { StaticImageData } from "next/image";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { CardTitle } from "../ui/card";
+import { getImageSrc } from "@/lib/utils";
 interface SearchModalProps {
   searchText: string;
   filteredUsers: User[];
@@ -35,7 +36,7 @@ export default function SearchModal(props: SearchModalProps) {
                 height={300}
                 width={300}
                 className="aspect-square h-full w-full"
-                src={user?.avatar?.img as StaticImageData}
+                src={getImageSrc(user?.avatar?.img)}
               />
               <AvatarFallback>{user?.username?.[0]}</AvatarFallback>
             </Avatar>

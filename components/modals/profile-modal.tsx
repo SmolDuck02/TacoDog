@@ -2,8 +2,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { User } from "@/lib/types";
-import defaultAvatar from "@/public/avatars/defaultAvatar.png";
-import defaultBanner from "@/public/bg/defaultBG.avif";
 
 import { signOut, useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
@@ -11,6 +9,7 @@ import Image from "next/image";
 import { DialogFooter, DialogHeader } from "../ui/dialog";
 import { Switch } from "../ui/switch";
 import EditProfileModal from "./edit-profile-modal";
+import { getImageSrc } from "@/lib/utils";
 
 export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
   const { data: session } = useSession();
@@ -30,7 +29,7 @@ export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
           } items-center   cursor-pointer `}
         >
           <Avatar className="h-9 w-9 ">
-            <AvatarImage src={user?.avatar?.img.src || defaultAvatar.src} />
+            <AvatarImage src={getImageSrc(user?.avatar?.img)} />
             <AvatarFallback>{user?.username[0]}</AvatarFallback>
           </Avatar>
           <span className={` ${isChatSidebar ? "flex" : "hidden"} font-bold`}>
@@ -44,7 +43,7 @@ export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
         <DialogHeader>
           <div className={`relative border-b border-gray-400  w-full h-16  text-4xl `}>
             <Image
-              src={user?.banner?.img || defaultBanner.src}
+              src={getImageSrc(user?.banner?.img)}
               alt="User Banner"
               fill={true}
               style={{
@@ -61,7 +60,7 @@ export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
           >
             <div className={` border-b p-3 flex gap-4  justify-start items-center w-full `}>
               <Avatar className="h-10 w-10">
-                <AvatarImage src={user?.avatar?.img.src || defaultAvatar.src} />
+                <AvatarImage src={getImageSrc(user?.avatar?.img)} />
                 <AvatarFallback>U</AvatarFallback>
               </Avatar>
 

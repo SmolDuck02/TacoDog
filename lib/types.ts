@@ -3,8 +3,8 @@ import { StaticImageData } from "next/image";
 export interface User extends NextAuthUser {
   username: string;
   password?: string;
-  banner?: { img: StaticImageData; name: string; source: string };
-  avatar?: { img: StaticImageData; name: string };
+  banner?: { img: StaticImageData | string; name: string; source: string };
+  avatar?: { img: StaticImageData | string; name: string };
 }
 export interface Chat {
   chat: string;

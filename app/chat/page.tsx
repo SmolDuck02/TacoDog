@@ -650,7 +650,6 @@ export default function Chat() {
       <Image
         src="/logo.png"
         alt="tacodog logo"
-        loading="eager"
         width={300}
         height={300}
         className=" w-24 lg:w-32 aspect-square grayscale opacity-[.3]"

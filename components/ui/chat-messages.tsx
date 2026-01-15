@@ -136,7 +136,6 @@ export default function ChatMesages({
                       alt="User Avatar"
                       height={300}
                       width={300}
-                      loading="eager"
                       className="aspect-square h-full w-full"
                     />
                     <AvatarFallback>{author.username[0]}</AvatarFallback>
@@ -217,7 +216,6 @@ export default function ChatMesages({
                   {isSeen && isLastMessage && isAuthor ? (
                     <div className="activeUserAvatar w-fit z-10 pt-1 pr-1 flex items-center gap-1">
                       <Image
-                        loading="eager"
                         src={getImageSrc(activeChatUser.avatar?.img)}
                         alt="Active Chat User Avatar"
                         height={300}

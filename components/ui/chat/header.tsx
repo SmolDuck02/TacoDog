@@ -66,7 +66,6 @@ export default function ChatHeader(props: Props) {
           <div className="flex gap-5 items-center">
             <Avatar className="h-10 w-10 cursor-pointer">
               <Image
-                loading="eager"
                 alt="User Avatar"
                 height={300}
                 width={300}

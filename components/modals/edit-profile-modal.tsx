@@ -94,7 +94,6 @@ export default function EditProfileModal() {
                       alt={`avatar ${index + 1}`}
                       width={300}
                       height={300}
-                      loading="eager"
                       className={`${
                         avatarSelected?.name == a.name && "border-2 border-white"
                       } object-cover h-10 w-10`}
@@ -115,7 +114,6 @@ export default function EditProfileModal() {
                   return (
                     <Image
                       key={index}
-                      loading="eager"
                       onClick={() => setBannerSelected(a)}
                       src={a.img}
                       alt={`banner ${index + 1}`}

@@ -46,7 +46,6 @@ export function ProfileModal({ isChatSidebar }: { isChatSidebar: boolean }) {
               src={getImageSrc(user?.banner?.img)}
               alt="User Banner"
               fill={true}
-              loading="eager"
               style={{
                 objectFit: "cover",
                 borderTopLeftRadius: "8px",

@@ -4,7 +4,7 @@ import { createServer } from "node:http";
 import { Server } from "socket.io";
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = process.env.HOSTNAME || "0.0.0.0";
+const hostname = dev ? (process.env.HOSTNAME || "localhost") : "0.0.0.0"; // Force 0.0.0.0 in production
 const port = Number(process.env.PORT) || 3000;
 
 // when using middleware `hostname` and `port` must be provided below

@@ -2,13 +2,13 @@
   "name": "ai-chat-assistant",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
-    "dev": "node --no-deprecation --import=./register.js  --trace-warnings   server.mts",
-    "dev:socket": "NODE_OPTIONS='--loader ts-node/esm --trace-warnings --no-warnings' ts-node server.mts",
-    "build": "NODE_OPTIONS='--max_old_space_size=1024' next build",
-    "start": "NODE_OPTIONS='--no-deprecation --max_old_space_size=450' NODE_ENV=production node --import=./register.js --trace-warnings  server.mts",
-    "lint": "next lint"
-  },
+    "scripts": {
+      "dev": "node --no-deprecation --import=./register.js  --trace-warnings   server.mts",
+      "dev:socket": "NODE_OPTIONS='--loader ts-node/esm --trace-warnings --no-warnings' ts-node server.mts",
+      "build": "NODE_OPTIONS='--max_old_space_size=1024' next build",
+      "start": "NODE_OPTIONS='--no-deprecation --max_old_space_size=400' NODE_ENV=production node --import=./register.js --trace-warnings  server.mts",
+      "lint": "next lint"
+    },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
     "@netlify/plugin-nextjs": "^5.9.3",

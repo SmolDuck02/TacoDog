@@ -4,7 +4,7 @@ import { createServer } from "node:http";
 import { Server } from "socket.io";
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = "localhost";
+const hostname = process.env.HOSTNAME || "0.0.0.0";
 const port = Number(process.env.PORT) || 3000;
 
 // when using middleware `hostname` and `port` must be provided below
@@ -18,7 +18,7 @@ app.prepare().then(() => {
   });
   const httpServer = createServer(handler);
   const io = new Server(httpServer, {
-    maxHttpBufferSize: 50 * 1024 * 1024,
+    maxHttpBufferSize: 10 * 1024 * 1024,
     connectionStateRecovery: {
       // the backup duration of the sessions and the packets
       maxDisconnectionDuration: 2 * 60 * 1000,
@@ -72,7 +72,7 @@ app.prepare().then(() => {
     });
   });
 
-  httpServer.listen(port, () => {
+  httpServer.listen(port, hostname, () => { // Added hostname parameter
     console.log(`> Ready on http://${hostname}:${port}`);
   });
 });

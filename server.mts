@@ -27,6 +27,11 @@ app.prepare().then(() => {
     },
   });
 
+  // Add error handlers to prevent crashes
+  httpServer.on('error', (error) => {
+    console.error('HTTP Server Error:', error);
+  });
+
   io.on("connection", async (socket) => {
     // await redis.del(`chatHistory:116`);
 
@@ -75,4 +80,18 @@ app.prepare().then(() => {
   httpServer.listen(port, hostname, () => { // Added hostname parameter
     console.log(`> Ready on http://${hostname}:${port}`);
   });
+}).catch((error) => {
+  console.error('Failed to prepare Next.js app:', error);
+  process.exit(1);
+});
+
+// Handle uncaught errors
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  // Don't exit, let the server try to recover
+});
+
+process.on('unhandledRejection', (error) => {
+  console.error('Unhandled Rejection:', error);
+  // Don't exit, let the server try to recover
 });

@@ -53,6 +53,7 @@ export default function ImageDisplay({
             }
           >
             <Image
+              loading="eager"
               width={300}
               height={300}
               src={imageSrc}

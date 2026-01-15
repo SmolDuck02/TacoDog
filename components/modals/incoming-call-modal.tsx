@@ -25,6 +25,7 @@ export function IncomingCallModal({
             src={getImageSrc(caller?.banner?.img)}
             alt="Caller Banner"
             fill
+            loading="eager"
             className="h-auto w-auto rounded-lg  object-cover brightness-75"
           />
           <div

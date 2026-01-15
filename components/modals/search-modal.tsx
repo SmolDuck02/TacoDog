@@ -32,6 +32,7 @@ export default function SearchModal(props: SearchModalProps) {
           >
             <Avatar className="h-9 w-9 ">
               <Image
+                loading="eager"
                 alt="User Avatar"
                 height={300}
                 width={300}

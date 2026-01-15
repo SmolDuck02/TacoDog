@@ -227,6 +227,7 @@ export default function ChatSidebar(props: ChatSidebarProps) {
                       } absolute h-4 w-4 `}
                     >
                       <Image
+                        loading="eager"
                         alt="User Avatar"
                         height={300}
                         width={300}
@@ -244,6 +245,7 @@ export default function ChatSidebar(props: ChatSidebarProps) {
                     <Avatar className="h-9 w-9 ">
                       <Image
                         alt="User Avatar"
+                        loading="eager"
                         height={300}
                         width={300}
                         className={`aspect-square h-full w-full `}

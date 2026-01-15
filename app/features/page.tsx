@@ -49,6 +49,7 @@ export default function Features() {
             <Image 
               src="/avatars/tacoAvatar.webp" 
               alt="TacoDog Logo" 
+              loading="eager"
               width={32} 
               height={32}
               className="w-full h-full object-cover rounded"

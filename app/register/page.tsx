@@ -302,6 +302,7 @@ export default function Register() {
                   <Image
                     width={100}
                     height={100}
+                    loading="eager"
                     alt="Google Icon"
                     src={GoogleIcon}
                     className="size-6"
@@ -316,6 +317,7 @@ export default function Register() {
 
       <div className=" bottom-0 lg:bottom-auto  w-full right-[-58%]  absolute ">
         <Image
+          loading="eager"
           src="/avatars/tacoAvatar.webp"
           alt="logo"
           height={500}

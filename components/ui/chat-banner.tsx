@@ -6,6 +6,7 @@ export default function ChatBanner({ activeChatUser }: { activeChatUser: User })
     <div className="z-[52] relative border-b justify-end items-end w-full p-6 min-h-[2rem] lg:min-h-[5.5rem] flex text-[10px] lg:text-xs ">
       <Image
         fill
+        loading="eager"
         src={getImageSrc(activeChatUser?.banner?.img)}
         className=" object-cover brightness-95"
         alt="user banner"

@@ -4,72 +4,87 @@ import { createServer } from "node:http";
 import { Server } from "socket.io";
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = dev ? (process.env.HOSTNAME || "localhost") : "0.0.0.0"; // Force 0.0.0.0 in production
+const hostname = "0.0.0.0"; // Always use 0.0.0.0 for Render
 const port = Number(process.env.PORT) || 3000;
 
-// when using middleware `hostname` and `port` must be provided below
 const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
 
 app.prepare().then(() => {
+  console.log('Next.js app prepared successfully');
+  
   const redis = new Redis({
     url: process.env.UPSTASH_REDIS_REST_URL,
     token: process.env.UPSTASH_REDIS_REST_TOKEN,
   });
+  
   const httpServer = createServer(handler);
   const io = new Server(httpServer, {
-    maxHttpBufferSize: 10 * 1024 * 1024,
+    maxHttpBufferSize: 5 * 1024 * 1024, // Reduced to 5MB
     connectionStateRecovery: {
-      // the backup duration of the sessions and the packets
       maxDisconnectionDuration: 2 * 60 * 1000,
-      // whether to skip middlewares upon successful recovery
       skipMiddlewares: true,
     },
   });
 
-  // Add error handlers to prevent crashes
   httpServer.on('error', (error) => {
     console.error('HTTP Server Error:', error);
   });
 
-  io.on("connection", async (socket) => {
-    // await redis.del(`chatHistory:116`);
-
+  io.on("connection", (socket) => {
     console.log(`A user connected: ${socket.id}`);
 
-    socket.on("sendChat", async (data) => {
-      const { activeChatHistory, receiverID, newChatMessage } = data;
-
-      console.log("ChatMessage received:", receiverID, newChatMessage);
-
-      io.emit(`receiveChat:${receiverID}`, newChatMessage);
-
-      if (newChatMessage.type && newChatMessage.type == "call") {
-        io.emit(`receiveChat:${newChatMessage.senderID}`, {newChatMessage, receiverID});
+    socket.on("sendChat", (data) => {
+      try {
+        const { activeChatHistory, receiverID, newChatMessage } = data;
+        io.emit(`receiveChat:${receiverID}`, newChatMessage);
+        if (newChatMessage.type && newChatMessage.type == "call") {
+          io.emit(`receiveChat:${newChatMessage.senderID}`, {newChatMessage, receiverID});
+        }
+        activeChatHistory.push(newChatMessage);
+      } catch (error) {
+        console.error('Error in sendChat:', error);
       }
-      activeChatHistory.push(newChatMessage);
-
-      // await redis.set(`chatHistory:${chatUsersID}`, activeChatHistory);
-      // cancel -- await redis.incr("chatCounter:${chatUsersID}");
-      console.log(activeChatHistory, `Successfully pushed new chat to history`);
     });
 
     socket.on("call", ({ receiverID, caller }) => {
-      io.emit(`receiveCall:${receiverID}`, caller);
+      try {
+        io.emit(`receiveCall:${receiverID}`, caller);
+      } catch (error) {
+        console.error('Error in call:', error);
+      }
     });
 
     socket.on(`acceptCall`, (data) => {
-      io.emit(`acceptCall`, data);
+      try {
+        io.emit(`acceptCall`, data);
+      } catch (error) {
+        console.error('Error in acceptCall:', error);
+      }
     });
+
     socket.on(`rejectCall`, (callerID) => {
-      io.emit(`rejectCall:${callerID}`);
+      try {
+        io.emit(`rejectCall:${callerID}`);
+      } catch (error) {
+        console.error('Error in rejectCall:', error);
+      }
     });
+
     socket.on("typing", ({ senderID, receiverID, state }) => {
-      io.emit(`typing:${receiverID}`, { senderID, state });
+      try {
+        io.emit(`typing:${receiverID}`, { senderID, state });
+      } catch (error) {
+        console.error('Error in typing:', error);
+      }
     });
 
     socket.on("seenChat", ({ senderID, index }) => {
-      io.emit(`seenChat:${senderID}`, index);
+      try {
+        io.emit(`seenChat:${senderID}`, index);
+      } catch (error) {
+        console.error('Error in seenChat:', error);
+      }
     });
 
     socket.on("disconnect", () => {
@@ -77,21 +92,21 @@ app.prepare().then(() => {
     });
   });
 
-  httpServer.listen(port, hostname, () => { // Added hostname parameter
-    console.log(`> Ready on http://${hostname}:${port}`);
+  httpServer.listen(port, hostname, () => {
+    console.log(`> Server ready on http://${hostname}:${port}`);
+    console.log(`> Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`> Memory limit: ${process.env.NODE_OPTIONS || 'default'}`);
   });
 }).catch((error) => {
-  console.error('Failed to prepare Next.js app:', error);
+  console.error('Failed to start server:', error);
+  console.error('Error details:', error.message);
+  console.error('Stack:', error.stack);
   process.exit(1);
 });
 
-// Handle uncaught errors
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  // Don't exit, let the server try to recover
-});
-
-process.on('unhandledRejection', (error) => {
-  console.error('Unhandled Rejection:', error);
-  // Don't exit, let the server try to recover
-});
+// Keep process alive
+setInterval(() => {
+  if (process.memoryUsage().heapUsed > 350 * 1024 * 1024) { // 350MB
+    console.warn('Memory usage high:', Math.round(process.memoryUsage().heapUsed / 1024 / 1024), 'MB');
+  }
+}, 30000); // Log every 30 seconds

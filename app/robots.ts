@@ -9,10 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*',
         disallow: ['/api/', '/chat'],
       },
-      {
-        userAgent: 'Googlebot',
-        disallow: ['/api/', '/chat'],
-      },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
   };
